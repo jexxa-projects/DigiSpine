@@ -194,7 +194,7 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:latest
+    image: confluentinc/cp-ksqldb-cli:latest
     entrypoint: /bin/sh
     tty: true
 

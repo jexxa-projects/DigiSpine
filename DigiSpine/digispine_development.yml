@@ -106,7 +106,7 @@ services:
       KSQL_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:latest
+    image: confluentinc/cp-ksqldb-cli:latest
     entrypoint: /bin/sh
     tty: true
 
