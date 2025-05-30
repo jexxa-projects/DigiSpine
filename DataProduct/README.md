@@ -15,7 +15,7 @@ IMPORTANT: WORK IN PROGRESS
   - Open source 
 
 ## Setup 
-- Deploy DigiSpine [digispine-compose-production.yml](../DigiSpine/digispine_production.yml) 
+- Deploy DigiSpine [digispine-compose-production.yml](../DigiSpine/digispine.yml) 
 - Deploy [kconnect-console-producer.yml](../DigiSpine/kafka-connect-clients/kconnect-console-producer.yml)
 - Deploy [dataproduct.yml](dataproduct.yml) (NOT PRODUCTION READY!!!)
 - Docu: https://docs.risingwave.com/docs/current/get-started/
