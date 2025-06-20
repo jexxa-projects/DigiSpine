@@ -39,7 +39,7 @@ services:
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8085"
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
       KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
       KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
 
@@ -87,7 +87,7 @@ services:
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8085"
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
       KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
       KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
 
@@ -134,7 +134,7 @@ services:
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8085"
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
       KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
       KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
 
@@ -151,12 +151,12 @@ services:
     image: confluentinc/cp-schema-registry:latest
     hostname: schemaregistry
     ports:
-      - 18085:8085
+      - 8081:8081
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka1:29092,PLAINTEXT://kafka2:29092,PLAINTEXT://kafka3:29092
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
       SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: "http"
       SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
       SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
@@ -172,7 +172,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: digispine-production
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:29092,kafka2:29092,kafka3:29092
       # Automatically register schemaregistry and ksqldbServer in kafka-ui
-      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schemaregistry:8085"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schemaregistry:8081"
       KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldbServer:8088
 
     healthcheck:
@@ -189,7 +189,7 @@ services:
     environment:
       KSQL_LISTENERS: http://0.0.0.0:8088
       KSQL_BOOTSTRAP_SERVERS: kafka1:29092,kafka2:29092,kafka3:29092
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schemaregistry:8085
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schemaregistry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
 
