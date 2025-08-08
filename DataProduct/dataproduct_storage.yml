@@ -5,7 +5,7 @@ services:
     image:  risingwavelabs/risingwave:latest
     command: >
       standalone
-      --meta-opts=" --backend etcd --etcd-endpoints etcd:2388  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://hummockadmin:hummockadmin@minio:9000/hummock001 --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
+      --meta-opts=" --backend sql --sql-endpoint postgres://postgres:@postgres-0:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://hummockadmin:hummockadmin@minio:9000/hummock001 --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
       --frontend-opts=" --listen-addr 0.0.0.0:4566 --health-check-listener-addr 0.0.0.0:6786 --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:4566 --meta-addr http://0.0.0.0:5690 "  
       --compute-opts="--listen-addr 0.0.0.0:5688 --advertise-addr 0.0.0.0:5688 --prometheus-listener-addr 0.0.0.0:1250 --async-stack-trace verbose --connector-rpc-endpoint 0.0.0.0:50051 --role both --meta-address http://0.0.0.0:5690"  
       --compactor-opts=" --listen-addr 0.0.0.0:6660  --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:6660 --meta-address http://0.0.0.0:5690"
@@ -13,6 +13,27 @@ services:
     ports:
       - "4566:4566"
       - "5691:5691"
+
+
+  postgres:
+    image: "postgres:15-alpine"
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=metadata
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    expose:
+      - "5432"
+    ports:
+      - "8432:5432"
+    volumes:
+      - "postgres-data:/var/lib/postgresql/data"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    restart: always
 
   minio: # object store for risingwave
     image: quay.io/minio/minio:latest
@@ -32,19 +53,6 @@ services:
       MINIO_DOMAIN: "minio"
       MINIO_ADDRESS: 0.0.0.0:9000
       MINIO_CONSOLE_ADDRESS: 0.0.0.0:9001
-
-  etcd: # Key value store for metadata of risingwave
-    image: "quay.io/coreos/etcd:v3.5.10"
-
-    volumes:
-      - "etcd-data:/etcd-data"
-    environment:
-      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2388
-      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2388
-      ETCD_NAME: risedev-meta
-      ETCD_DATA_DIR: /etcd-data
-      ETCD_AUTO_COMPACTION_MODE: periodic
-      ETCD_AUTO_COMPACTION_RETENTION: 1m
 
   prometheus:
     image: "prom/prometheus:latest"
@@ -74,6 +82,6 @@ services:
 
 volumes:
   minio-data:
-  etcd-data:
+  postgres-data:
   prometheus-data:
   grafana-data:
