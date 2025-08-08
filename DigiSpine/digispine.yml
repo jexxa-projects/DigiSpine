@@ -34,8 +34,9 @@ services:
       # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
       CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
 
-      # Required to avoid log spamming from MetdataLoader
-      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
+      # Set logging to WARN
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_LOG4J_LOGGERS: "org.apache.kafka=WARN,kafka=WARN,state.change.logger=WARN"
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
@@ -82,8 +83,9 @@ services:
       # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
       CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
 
-      # Required to avoid log spamming from MetdataLoader
-      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
+      # Set logging to WARN
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_LOG4J_LOGGERS: "org.apache.kafka=WARN,kafka=WARN,state.change.logger=WARN"
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
@@ -129,8 +131,9 @@ services:
       # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
       CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
 
-      # Required to avoid log spamming from MetdataLoader
-      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
+      # Set logging to WARN
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_LOG4J_LOGGERS: "org.apache.kafka=WARN,kafka=WARN,state.change.logger=WARN"
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
@@ -157,6 +160,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: PLAINTEXT
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_SCHEMA_REGISTRY_INTER_INSTANCE_PROTOCOL: "http"
       SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: INFO
       SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
 
@@ -191,6 +195,10 @@ services:
       KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schemaregistry:8081
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+
+    volumes:
+      - ksqldb-data:/var/lib/ksqldb
 
   ksqldb-cli:
     image: confluentinc/cp-ksqldb-cli:latest
@@ -201,3 +209,4 @@ volumes:
   kafka1-data:
   kafka2-data:
   kafka3-data:
+  ksqldb-data:
