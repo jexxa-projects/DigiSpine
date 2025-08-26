@@ -145,3 +145,12 @@ IMPORTANT: WORK IN PROGRESS
 From: https://superset.apache.org/docs/quickstart/
 - Deploy `superset.yml`
 - https://preset.io/blog/2020-05-18-install-db-drivers/
+
+
+## Notes: 
+
+### Error messages in RisingWave
+
+- __Connection timeout__: If you see following error message in RisingWave but everything seems to work, a proxy in between (such as ha-proxy) might close the connection and causes the disconnection.   
+    ```
+    2025-08-25T07:34:32.423706969Z 2025-08-25T07:34:32.423584674Z ERROR rw-streaming madsim_rdkafka::std_::client: librdkafka: Global error: BrokerTransportFailure (Local: Broker transport failure): GroupCoordinator: technik.dillinger.de:9093: Disconnected (after 30001ms in state UP, 1 identical error(s) suppressed)```

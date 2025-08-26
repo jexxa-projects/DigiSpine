@@ -3,8 +3,36 @@ version: "3.7"
 services:
   risingwave:
     image:  apache/superset:latest
-    ports:
-      - "8085:8088"
+
     environment:
       SUPERSET_SECRET_KEY: "Oe3rtNW7Q6da9n/O5mc/FZKGiCAum84R3SfpP6AGLN6F+ajOYP7KM0nk"
       TALISMAN_ENABLED: "False"
+
+    networks:
+      - public-technik
+
+    deploy:
+      labels:
+        # Enable traefic routing
+        - traefik.enable=true
+
+        # Configure network: Application is only available via this network and not via the public docker-swarm network
+        - traefik.swarm.network=public-technik
+
+        # Configure routing: Only accept HTTPS-requests (websecure)
+        - traefik.http.routers.superset.tls=true
+        - traefik.http.routers.superset.entrypoints=websecure
+
+        # Configure routing: Access application via Prefix `jexxa1` provided as swarm
+        - traefik.http.routers.superset.rule=PathPrefix(`/superset`)
+        - traefik.http.routers.superset.middlewares=superset@swarm
+
+        # Configure Middleware: Removes `jexxa2` from the URL before forwarding it to application
+        - traefik.http.middlewares.superset.stripprefix.prefixes=/superset
+
+        # Configure the service: # In docker-swarm we must define the public port of the application
+        - traefik.http.services.superset.loadbalancer.server.port=8088
+
+networks:
+  public-technik:
+    external: true

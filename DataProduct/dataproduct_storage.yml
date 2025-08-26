@@ -5,27 +5,31 @@ services:
     image:  risingwavelabs/risingwave:latest
     command: >
       standalone
-      --meta-opts=" --backend sql --sql-endpoint postgres://postgres:@postgres-0:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://hummockadmin:hummockadmin@minio:9000/hummock001 --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
+      --meta-opts=" --backend sql --sql-endpoint postgres://postgres:@postgres:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://hummockadmin:hummockadmin@minio:9000/hummock001 --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
       --frontend-opts=" --listen-addr 0.0.0.0:4566 --health-check-listener-addr 0.0.0.0:6786 --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:4566 --meta-addr http://0.0.0.0:5690 "  
       --compute-opts="--listen-addr 0.0.0.0:5688 --advertise-addr 0.0.0.0:5688 --prometheus-listener-addr 0.0.0.0:1250 --async-stack-trace verbose --connector-rpc-endpoint 0.0.0.0:50051 --role both --meta-address http://0.0.0.0:5690"  
       --compactor-opts=" --listen-addr 0.0.0.0:6660  --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:6660 --meta-address http://0.0.0.0:5690"
+
+    environment:
+      - RUST_LOG=warn
+      - ENABLE_TELEMETRY=false
 
     ports:
       - "4566:4566"
       - "5691:5691"
 
+    networks:
+      - internal
+      - monitoring
+      - public-technik
 
   postgres:
-    image: "postgres:15-alpine"
+    image: "postgres:16-alpine"
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_USER=postgres
       - POSTGRES_DB=metadata
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    expose:
-      - "5432"
-    ports:
-      - "8432:5432"
     volumes:
       - "postgres-data:/var/lib/postgresql/data"
     healthcheck:
@@ -35,13 +39,13 @@ services:
       retries: 5
     restart: always
 
+    networks:
+      - internal
+
   minio: # object store for risingwave
     image: quay.io/minio/minio:latest
     entrypoint: sh
     command: -c 'mkdir -p /data/hummock001 && minio server /data'
-    ports:
-      - "9005:9000"
-      - "9006:9001"
     volumes:
       - "minio-data:/data"
     environment:
@@ -54,34 +58,22 @@ services:
       MINIO_ADDRESS: 0.0.0.0:9000
       MINIO_CONSOLE_ADDRESS: 0.0.0.0:9001
 
-  prometheus:
-    image: "prom/prometheus:latest"
-    command: >
-      --config.file=/prometheus/prometheus.yml
-      --storage.tsdb.path=/prometheus
-      --web.console.libraries=/usr/share/prometheus/console_libraries
-      --web.console.templates=/usr/share/prometheus/consoles
-      --web.listen-address=0.0.0.0:9500
-      --storage.tsdb.retention.time=30d
-    ports:
-      - "9500:9500"
-    volumes:
-      - "prometheus-data:/prometheus"
-
-  grafana:
-    image: "grafana/grafana-oss:latest"
-    ports:
-      - "3001:3001"
-    volumes:
-      - "grafana-data:/var/lib/grafana"
-
-    environment:
-      GF_PATHS_CONFIG: /var/lib/grafana/grafana.ini
-      GF_PATHS_PROVISIONING: /var/lib/grafana/provisioning
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/provisioning/dashboards/grafana-risedev-dashboard.yml
+    networks:
+      - internal
+      - monitoring
 
 volumes:
   minio-data:
+    #driver: distributed-docker-volumes
+
   postgres-data:
-  prometheus-data:
-  grafana-data:
+    #driver: distributed-docker-volumes
+
+
+
+networks:
+  internal:
+  monitoring:
+    external: true
+  public-technik:
+    external: true
