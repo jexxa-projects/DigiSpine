@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+
+  superset:
+    image:  ghcr.io/jexxa-projects/digispine/superset:latest
+    environment:
+      SUPERSET_SECRET_KEY: "supersecretkey"   # in Produktion anpassen!
+      TALISMAN_ENABLED: "false"
+
+    command: >
+      sh -c "
+        superset db upgrade &&
+        superset fab create-admin \
+          --username admin --firstname Admin --lastname User \
+          --email admin@example.com \
+          --password admin || true &&
+        superset init &&
+        superset run -h 0.0.0.0 -p 8088
+      "
+    volumes:
+      - sqlite_meta_store:/app/superset_home
+    ports:
+      - "9099:8088"
+
+volumes:
+  sqlite_meta_store:
+
