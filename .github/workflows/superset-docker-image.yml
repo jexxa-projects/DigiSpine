@@ -46,5 +46,5 @@ jobs:
           context: DataProduct/superset/
           platforms: linux/amd64,linux/arm64
           load: true
-          tags: ghcr.io/${{ github.repository_owner }}/digispine/superset:latest, ghcr.io/${{ github.repository_owner }}/digispine/superset:$(date +%s) 
+          tags: ghcr.io/${{ github.repository_owner }}/digispine/superset:latest
       
