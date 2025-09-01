@@ -54,5 +54,5 @@ jobs:
           load: true
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.base_version }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository_owner }}/digispine/superset:${{ steps.version.outputs.base_version }}
+            ghcr.io/${{ github.repository_owner }}/digispine/superset:latest
