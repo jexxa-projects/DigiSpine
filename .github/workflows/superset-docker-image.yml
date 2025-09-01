@@ -28,9 +28,11 @@ jobs:
       - name: Build Docker image
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/superset
-          docker build -t superset:latest -t superset:$(date +%s) DataProduct/superset/Dockerfile
+          echo $PWD
+          ls
+          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$(date +%s) DataProduct/superset/Dockerfile
 
       - name: Push Docker image
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/superset
-          docker push --all-tags superset
+          docker push --all-tags $IMAGE_NAME
