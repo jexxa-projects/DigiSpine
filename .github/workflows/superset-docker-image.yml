@@ -15,6 +15,17 @@ jobs:
       id-token: write   # falls später OIDC genutzt wird
 
     steps:
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v4
+        with:
+          daemon-config: |
+            {
+              "debug": true,
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+  
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -24,15 +35,17 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Docker image
-        run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/superset
-          echo $PWD
-          ls
-          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$(date +%s) DataProduct/superset/
-
-      - name: Push Docker image
-        run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/superset
-          docker push --all-tags $IMAGE_NAME
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Build and push
+        uses: docker/build-push-action@v6
+          
+        with:
+          context: DataProduct/superset/
+          platforms: linux/amd64,linux/arm64
+          load: true
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/digispine/superset:latest
+      
