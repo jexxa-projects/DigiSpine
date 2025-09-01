@@ -29,29 +29,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          # list of Docker images to use as base name for tags
-          images: ghcr.io/${{ github.repository_owner }}/digispine/superset
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
+      - name: Extract base image version
+        id: version
+        run: |
+          BASE=$(grep '^FROM' DataProduct/superset/Dockerfile | head -n1 | cut -d':' -f2)
+          echo "base_version=$BASE" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       
@@ -63,6 +53,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           load: true
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-      
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.base_version }}
+            ghcr.io/${{ github.repository }}:latest
