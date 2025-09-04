@@ -32,6 +32,10 @@ RUN . /app/.venv/bin/activate && \
     && playwright install-deps \
     && PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers playwright install chromium
 
+# Copy superset_config.py from master trunk of https://github.com/apache/superset/blob/master/superset/config.py because it allows
+# configure meta-database via environment variables. Can be removed as soon as this script is part of official docker image
+COPY --chown=superset superset_config.py /app/
+ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
 
 # Switch back to the superset user
 USER superset
