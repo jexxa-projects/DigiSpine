@@ -17,7 +17,7 @@ services:
     image:  ghcr.io/jexxa-projects/digispine/superset:latest
     environment:
       SUPERSET_SECRET_KEY: "supersecretkey"   # in Produktion anpassen!
-      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset-db:5432/superset
+      SUPERSET__SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset-db:5432/superset
     depends_on:
       - superset-db
     command: >
