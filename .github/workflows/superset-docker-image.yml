@@ -1,8 +1,6 @@
 name: Build Superset Docker Image
 
 on:
-  push:
-    branches: [ "main" ]  # Passe den Branch an
   workflow_dispatch:      # Manuelles Triggern
 
 jobs:
