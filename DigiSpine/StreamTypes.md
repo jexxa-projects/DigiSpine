@@ -1,127 +1,122 @@
-Work in Progress: 
+# Work in Progress: Stream-Typen & Nutzung
 
+## Übersicht der Stream-Typen
 
+| Stream-Typ                  | Nutzung im Produktionsumfeld                                | Empfohlenes Suffix/Prefix     | Kommentar                                                                 |
+|------------------------------|-------------------------------------------------------------|--------------------------------|---------------------------------------------------------------------------|
+| **Event Stream**             | Historie, Audit, abgeschlossene Geschäftsprozesse, Roh-Telemetrie | `_events` oder `ev_`           | Append-only; jedes Event zählt, Konsumenten müssen Idempotenz selbst sicherstellen |
+| **Upsert / State Stream**    | Aktueller Status, Dashboards, BI                           | `_upsert` oder `st_`           | Jeder Key = aktueller Zustand; Updates überschreiben alte Werte; ideal für MVs |
+| **CDC Stream**               | Integration von Legacy-DBs, Synchronisation                | `_cdc`                         | Capture-Change-Data; enthält Insert/Update/Delete; kann Upsert oder Append-only sein |
+| **Windowed / Aggregated**    | Reporting, KPIs, Zeitreihen                                | `_agg` oder `_window`          | Aggregationen über Zeitfenster; abgeleitet aus Event- oder Upsert-Streams |
+| **Compacted / Keyed Stream** | Konfigurations-/Statuswerte, reduzierte Speicherung        | `_keyed` oder `_compact`       | Kafka kompaktierter Topic; nur letzter Stand pro Key wird gespeichert |
+| **Temporal / Event-Time**    | Korrekte Zeitreihenanalyse trotz verzögerter Events        | `_temporal`                    | Event-time basiert; wichtig für verspätete Events; meist kombiniert mit Windowed/Upsert |
 
-Stream-Typ	Nutzung im Produktionsumfeld	Empfohlenes Suffix / Prefix	Kommentar
+---
 
-- Event Stream	Historie, Audit, abgeschlossene Geschäftsprozesse, Roh-Telemetrie	_events oder ev_	Append-only; jedes Event zählt, Konsumenten müssen Idempotenz ggf. selbst sicherstellen
+## Hinweise zur Nutzung
 
-- Upsert / State Stream	Aktueller Status, Dashboards, BI	_upsert oder st_	Jeder Key repräsentiert aktuellen Zustand; Updates überschreiben alte Werte; ideal für Materialized Views
+1. **Prefix vs. Suffix**
+    - Prefix (`st_`, `ev_`) → schneller Überblick in Topic-Listen / Monitoring.
+    - Suffix (`_upsert`, `_events`) → leichter in SQL / Materialized Views zu erkennen.
+    - Kombination möglich: `st_fertigung_day_upsert`.
 
-- CDC Stream	Integration von Legacy-DBs, Synchronisation	_cdc	Capture-Change-Data; enthält Insert/Update/Delete; kann Upsert oder Append-only sein, abhängig vom Connector
+2. **Versionierung**
+    - Für Recreate/Blue-Green-Streams → `_v1`, `_v2` ergänzen.
 
-- Windowed / Aggregated Stream	Reporting, KPIs, Zeitreihen	_agg oder _window	Aggregationen über Zeitfenster; oft für direkte BI-Auswertungen; kann aus Upsert oder Append-only abgeleitet werden
+3. **Metadaten im Event**
+    - Feld `stream_type` in JSON/Avro hinzufügen → maschinenlesbar & für automatisierte Prozesse nutzbar.
 
-- Compacted / Keyed Stream	Konfigurations- oder Statuswerte, reduzierte Speicherung	_keyed oder _compact	Kafka kompaktierter Topic; nur letzter Stand pro Key wird aufbewahrt; ideal für selten ändernde Daten
+---
 
-- Temporal / Event-Time Stream	Korrekte Zeitreihenanalyse trotz verzögerter Events	_temporal	Event-time basierte Streams; wichtig für verzögerte oder out-of-order Events; meist in Kombination mit Windowed/Upsert
+## Beispiel-Architektur: Fertigungs-BI-Szenario
 
+### 1️⃣ Event-Historie (Append-only)
+- **Topic:** `ev_fertigung_events_v1`
+- **Zweck:** Vollständige Historie für Audit, Debugging, Nachverfolgung.
+- **Eigenschaft:** Append-only, Updates/Refeeds werden angehängt.
+- **Verwendung:** Historische Auswertungen, Trend-Analysen, Replay.
 
-⸻
+---
 
-🔹 Hinweise zur Nutzung
-1.	Prefix vs. Suffix:
-- Prefix (st_, ev_) → schneller Überblick in Topics-Listen / Monitoring.
-- Suffix (_upsert, _events) → leichter in SQL/Materialized Views zu erkennen.
-- Man kann beides kombinieren: st_fertigung_day_upsert.
-2.	Versionierung:
-- Wenn du Recreate- oder Blue-Green-Streams machst → _v1, _v2 am Ende ergänzen.
-3.	Metadaten im Event:
-- Zusätzlich zum Namen lohnt sich ein Feld stream_type in JSON/Avro, damit automatisierte Prozesse den Typ maschinenlesbar haben.
+### 2️⃣ Upsert-State Stream
+- **Topic:** `st_fertigung_day_upsert_v1`
+- **Zweck:** Aktueller Stand pro Tag/Anlage → Dashboards, BI.
+- **Eigenschaft:** Primary Key (z. B. `produkt_ref`, `schritt_id`), Updates überschreiben.
+- **Verwendung:** MVs für Mengen pro Tag/Anlage, konsistente Zahlen im Dashboard.
 
-⸻
-Perfekt! Dann fasse ich das einmal in einer praktischen Mini-Architektur für dein Fertigungs-BI-Szenario zusammen. Ich kombiniere die Stream-Typen mit den empfohlenen Suffixes und erkläre, wie sie zusammenwirken.
+---
 
-⸻
+### 3️⃣ CDC Stream
+- **Topic:** `ev_fertigung_cdc_v1`
+- **Zweck:** Integration von Legacy-DBs.
+- **Eigenschaft:** Insert/Update/Delete; je nach Connector Append-only oder Upsert.
+- **Verwendung:** MV-Aufbau für aktuelle Produktionsdaten oder Statuswerte.
 
-1️⃣ Event-Historie (Append-only)
-- Zweck: Vollständige Historie aller Produktionsschritte, Audit, Debugging, Nachverfolgung.
-- Stream-Typ: Event Stream / Append-only
-- Kafka Topic: ev_fertigung_events_v1
-- Beschreibung:
-- Jedes Event kommt einmal.
-- Updates/Refeeds werden als neue Events angehängt.
-- Consumer müssen ggf. Idempotenz sicherstellen.
-- Verwendung in RisingWave: Kann direkt für historische Auswertungen genutzt werden, z. B. um Trends, Abweichungen oder komplette Event-Listen zu analysieren.
+---
 
-⸻
+### 4️⃣ Windowed / Aggregated Stream
+- **Topic:** `st_fertigung_day_agg_v1`
+- **Zweck:** KPI-Berechnung über Zeitfenster (Tagesproduktion, Wochenreports).
+- **Eigenschaft:** Abgeleitet aus Upsert- oder Event-Streams.
+- **Verwendung:** SUM/COUNT in RisingWave-MVs, direkt für BI nutzbar.
 
-2️⃣ Upsert-State Stream
-- Zweck: Aktueller Produktionsstand pro Tag/Anlage für Dashboards / BI.
-- Stream-Typ: Upsert / State Stream
-- Kafka Topic: st_fertigung_day_upsert_v1
-- Beschreibung:
-- Primary Key: (produkt_ref, schritt_id)
-- Updates überschreiben alte Werte automatisch.
-- Materialized View kann direkt COUNT / SUM / AVG berechnen.
-- Verwendung in RisingWave:
-- MV für aggregierte Mengen pro Tag/Anlage.
-- Dashboard zeigt immer konsistente Zahlen, auch bei Refeeds.
+---
 
-⸻
+### 5️⃣ Compacted / Keyed Stream
+- **Topic:** `st_fertigung_config_keyed`
+- **Zweck:** Konfigurationen oder selten ändernde Statuswerte.
+- **Eigenschaft:** Nur letzter Wert pro Key bleibt erhalten.
+- **Verwendung:** Source in RisingWave → MV für aktuelle Konfiguration.
 
-3️⃣ CDC Stream
-- Zweck: Synchronisation von Legacy-Datenbanken, Integration alter Systeme.
-- Stream-Typ: CDC Stream
-- Kafka Topic: ev_fertigung_cdc_v1
-- Beschreibung:
-- Enthält Insert/Update/Delete-Events.
-- Kann Upsert- oder Append-only-Logik haben, je nach Connector.
-- Verwendung in RisingWave:
-- Quelle für MVs, die aktuelle Produktionsdaten oder Statuswerte pflegen.
+---
 
-⸻
+### 6️⃣ Temporal / Event-Time Stream
+- **Topic:** `ev_fertigung_temporal_v1`
+- **Zweck:** Zeitreihenanalyse bei verspäteten/out-of-order Events.
+- **Eigenschaft:** Event-time basiert, benötigt Watermarks.
+- **Verwendung:** MVs mit Event-Time-Windowing für korrekte KPIs.
 
-4️⃣ Windowed / Aggregated Stream
-- Zweck: KPI-Berechnungen über Zeitfenster (z. B. Tagesproduktion, Wochenreports).
-- Stream-Typ: Windowed / Aggregated
-- Kafka Topic: st_fertigung_day_agg_v1
-- Beschreibung:
-- Kann aus Upsert-State Stream oder Event-Stream abgeleitet werden.
-- Aggregiert automatisch pro Zeitfenster (z. B. 1 Tag, 1 Woche).
-- Verwendung in RisingWave:
-- MV, die SUM/COUNT pro Tag oder pro Anlage berechnet.
-- Dashboard-Abfragen können direkt auf dieser MV laufen.
+---
 
-⸻
+## Empfehlung Namensschema
 
-5️⃣ Compacted / Keyed Stream
-- Zweck: Speichert aktuelle Konfigurationen oder Statuswerte mit minimalem Speicherbedarf.
-- Stream-Typ: Compacted / Keyed
-- Kafka Topic: st_fertigung_config_keyed
-- Beschreibung:
-- Nur der letzte Wert pro Key wird behalten.
-- Sehr effizient für selten ändernde Daten.
-- Verwendung:
-- RisingWave Source als Upsert-Stream → Materialized View kann aktuelle Konfigurationen direkt anzeigen.
+- **Prefix:**
+    - `st_` → Upsert / State / Aggregation
+    - `ev_` → Append-only / Historie / CDC
 
-⸻
+- **Suffix:**
+    - `_upsert`, `_agg`, `_events`, `_keyed`, `_temporal`
+    - `_v1`, `_v2` für Versionierung
 
-6️⃣ Temporal / Event-Time Stream
-- Zweck: Korrekte Zeitreihenanalyse trotz verzögerter oder out-of-order Events.
-- Stream-Typ: Temporal / Event-Time
-- Kafka Topic: ev_fertigung_temporal_v1
-- Beschreibung:
-- Event-Time-basiert, wichtig für Telemetrie oder verspätete Events.
-- Kombination mit Windowed / Aggregated Streams sinnvoll.
-- Verwendung in RisingWave:
-- MV mit Windowing auf Event-Time → richtige Zeitreihen-KPIs, auch wenn Events verspätet eintreffen.
+➡ Beispiel: `st_fertigung_day_upsert_v1`, `ev_fertigung_events_v1`
 
-⸻
+---
 
-7️⃣ Empfehlung für Namensschema
+## Vorteile der Architektur
 
-- Prefix: st_ → Upsert / State / Aggregation 
-- Prefix: ev_ → Append-only / Historie / CDC
-- Suffix: _upsert, _agg, _events, _keyed, _temporal, _v1 für Versionierung
-- Beispiel: st_fertigung_day_upsert_v1, ev_fertigung_events_v1
+1. **Klare Trennung der Stream-Arten** → weniger Fehler, einfacheres Monitoring.
+2. **Dashboards/BI** konsumieren Upsert-Streams → konsistente Kennzahlen.
+3. **Historie & Audit** bleibt durch Append-only erhalten → Event-Sourcing möglich.
+4. **Aggregationen & KPIs** werden effizient über MVs berechnet.
 
-⸻
+---
 
-🔹 Vorteile dieser Architektur
+## Quelle vs. Ableitung (Kurzübersicht)
 
-1. Klare Trennung der Stream-Arten → weniger Fehler, leichteres Monitoring.
-2.	BI / Dashboard kann direkt Upsert-Streams konsumieren → konsistente Kennzahlen.
-3.	Historie & Audit bleibt in Append-only Streams erhalten → Event-Sourcing möglich.
-4.	Aggregationen / KPIs automatisch in MVs → sehr effizientes Streaming-Analytics.
+1. **Event Stream (Append-only)**
+    - Quelle, Basis für alle anderen.
 
+2. **CDC Stream**
+    - Quelle (DB-Änderungen), kann Event/Upsert erzeugen.
+
+3. **Upsert / State Stream**
+    - Quelle oder Ableitung (aus Event/CDC).
+
+4. **Compacted / Keyed Stream**
+    - Abgeleitet aus Event/Upsert + Kafka-Compaction.
+
+5. **Windowed / Aggregated Stream**
+    - Abgeleitet aus Event/Upsert per Zeitfenster.
+
+6. **Temporal / Event-Time**
+    - Kein eigener Stream, sondern Verarbeitungsparadigma auf Event/CDC/Upsert.
