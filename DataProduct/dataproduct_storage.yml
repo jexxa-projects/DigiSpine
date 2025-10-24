@@ -5,7 +5,7 @@ services:
     image:  risingwavelabs/risingwave:latest
     command: >
       standalone
-      --meta-opts=" --backend sql --sql-endpoint postgres://postgres:@postgres:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://hummockadmin:hummockadmin@minio:9000/hummock001 --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
+      --meta-opts=" --backend sql --sql-endpoint postgres://postgres:@postgres:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://s3-admin:uqXzkTy05wbvD6RQd@minio-u086:9100/risingwave --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
       --frontend-opts=" --listen-addr 0.0.0.0:4566 --health-check-listener-addr 0.0.0.0:6786 --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:4566 --meta-addr http://0.0.0.0:5690 "  
       --compute-opts="--listen-addr 0.0.0.0:5688 --advertise-addr 0.0.0.0:5688 --prometheus-listener-addr 0.0.0.0:1250 --async-stack-trace verbose --connector-rpc-endpoint 0.0.0.0:50051 --role both --meta-address http://0.0.0.0:5690"  
       --compactor-opts=" --listen-addr 0.0.0.0:6660  --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:6660 --meta-address http://0.0.0.0:5690"
@@ -20,60 +20,53 @@ services:
 
     networks:
       - internal
-      - monitoring
-      - public-technik
+      - s3-storage
 
   postgres:
-    image: "postgres:16-alpine"
+    image: "postgres:18"
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_USER=postgres
       - POSTGRES_DB=metadata
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
-      - "postgres-data:/var/lib/postgresql/data"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 2s
-      timeout: 5s
-      retries: 5
+      - "postgres-data:/var/lib/postgresql"
+
     restart: always
 
     networks:
       - internal
+      - s3-storage
 
-  minio: # object store for risingwave
-    image: quay.io/minio/minio:latest
-    entrypoint: sh
-    command: -c 'mkdir -p /data/hummock001 && minio server /data'
-    volumes:
-      - "minio-data:/data"
+  postgres-dp:
+    image: "postgres:18"
+    ports:
+      - "5432:5432"
     environment:
-      MINIO_CI_CD: "1"
-      MINIO_PROMETHEUS_AUTH_TYPE: public
-      MINIO_PROMETHEUS_URL: "http://prometheus:9500"
-      MINIO_ROOT_PASSWORD: hummockadmin
-      MINIO_ROOT_USER: hummockadmin
-      MINIO_DOMAIN: "minio"
-      MINIO_ADDRESS: 0.0.0.0:9000
-      MINIO_CONSOLE_ADDRESS: 0.0.0.0:9001
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=dataproduct
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - "postgres-dp-data:/var/lib/postgresql"
+
+    restart: always
 
     networks:
       - internal
-      - monitoring
+      - s3-storage
 
 volumes:
-  minio-data:
-    #driver: distributed-docker-volumes
 
   postgres-data:
-    #driver: distributed-docker-volumes
+    driver: distributed-docker-volumes
+
+  postgres-dp-data:
+    driver: distributed-docker-volumes
 
 
 
 networks:
   internal:
-  monitoring:
-    external: true
-  public-technik:
+  s3-storage:
     external: true
