@@ -1,0 +1,33 @@
+version: "3.8"
+#replace the following hosts
+# 'kafka-broker' with the name or IP of your kafka-broker
+services:
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+
+    environment:
+      CONNECT_OFFSETS_TOPIC_REPLICATION_FACTOR:  1
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+    command:
+      - bash
+      - -c
+      - >
+        echo -e "\n--\n+> Start producing Data";
+        while true; 
+        do echo {\"wertInCelsius\":$$(shuf --input-range=900-1800  --head-count=1) , \"timestamp\":$$(date +%s) \}; 
+        sleep 1; 
+        done | 
+        /usr/bin/kafka-avro-console-producer 
+        --bootstrap-server kafka-broker:9092 
+        --topic example-topic2 
+        --property schema.registry.url=http://kafka-broker:8081 
+        --property value.schema='{"type":"record","name":"ho_messwert","fields":[{"name":"wertInCelsius","type":"float"}, {"name":"timestamp","type":"long", "default": 0} ]}'

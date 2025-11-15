@@ -1,0 +1,34 @@
+version: "3.9"
+
+volumes:
+  metastore_data:
+
+services:
+  superset-db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+    volumes:
+      - metastore_data:/var/lib/postgresql/data
+
+  superset:
+    image:  ghcr.io/jexxa-projects/digispine/superset:latest
+    environment:
+      SUPERSET_SECRET_KEY: "supersecretkey"   # in Produktion anpassen!
+      SUPERSET__SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset-db:5432/superset
+    depends_on:
+      - superset-db
+    command: >
+      sh -c "
+        superset db upgrade &&
+        superset fab create-admin \
+          --username admin --firstname Admin --lastname User \
+          --email admin@example.com \
+          --password admin || true &&
+        superset init &&
+        superset run -h 0.0.0.0 -p 8088
+      "
+    ports:
+      - "9100:8088"

@@ -1,0 +1,29 @@
+version: "3.8"
+#replace the following hosts
+# 'kafka-broker' with the name or IP of your kafka-broker
+services:
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+
+    environment:
+      CONNECT_OFFSETS_TOPIC_REPLICATION_FACTOR:  1
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+    command:
+      - bash
+      - -c
+      - >
+        echo -e "\n--\n+> Start consuming Data";
+        /usr/bin/kafka-avro-console-consumer 
+        --group kafka-avro-consumer 
+        --bootstrap-server kafka-broker:9092 
+        --topic example-topic2 
+        --property schema.registry.url=http://kafka-broker:8081 

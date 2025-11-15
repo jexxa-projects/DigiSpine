@@ -1,0 +1,9 @@
+version: "3.7"
+
+services:
+  risingwave:
+    image:  risingwavelabs/risingwave:latest
+    restart: always
+    ports:
+      - "4566:4566"
+      - "5691:5691"

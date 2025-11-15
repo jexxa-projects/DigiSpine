@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  metabase:
+    image: metabase/metabase:latest
+
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase_user
+      MB_DB_PASS: metabase_pass
+      MB_DB_HOST: db
+      MB_SITE_URL: https://myaddress/reporting/metabase
+
+    networks:
+      - metabase_net
+      - public-technik
+
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        # Enable traefic routing
+        - traefik.enable=true
+        - traefik.swarm.network=public-technik
+
+        # Configure routing for reporting
+        - traefik.http.routers.reportingmetabase.tls=true
+        - traefik.http.routers.reportingmetabase.entrypoints=websecure
+
+        - traefik.http.routers.reportingmetabase.rule=PathPrefix(`/reporting/metabase`)
+        - traefik.http.routers.reportingmetabase.middlewares=reportingmetabase@swarm
+
+        # Define the middleware reporting
+        - traefik.http.middlewares.reportingmetabase.stripprefix.prefixes=/reporting/metabase
+        - traefik.http.middlewares.reportingmetabase.stripprefix.forceSlash=false
+
+        # Configure the service
+        - traefik.http.services.reportingmetabase.loadbalancer.server.port=3000 # In docker-swarm we must define the public port of the application this way
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: metabase
+      POSTGRES_USER: metabase_user
+      POSTGRES_PASSWORD: metabase_pass
+    volumes:
+      - db_data:/var/lib/postgresql
+    networks:
+      - metabase_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+networks:
+  metabase_net:
+    driver: overlay
+  public-technik:
+    external: true
+
+volumes:
+  db_data:
+    driver: distributed-docker-volumes
+

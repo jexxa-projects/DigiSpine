@@ -1,0 +1,70 @@
+version: "3.8"
+#replace the following hosts
+# 'kafka-broker' with the name or IP of your kafka-broker
+
+services:
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:latest
+    ports:
+      - "8083:8083"
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'kafka-broker:9092'
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/usr/share/filestream-connectors
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_DEFAULT_REPLICATION_FACTOR: 1
+      CONNECT_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+    command:
+      - bash
+      - -c
+      - |
+        /etc/confluent/docker/run &
+        echo "Waiting for Kafka Connect to start listening on localhost ⏳"
+        while true 
+        do
+          curl_status=$$(curl -s -o /dev/null -w %{http_code} http://localhost:8083/connectors)
+          echo -e $$(date) " Kafka Connect listener HTTP state: " $$curl_status " (waiting for 200)"
+          if [ $$curl_status -eq 200 ] ; then
+            break
+          fi
+
+          sleep 5
+        done
+        
+        echo -e "\n--\n+> Creating Data Sink"
+        curl -s -X PUT -H  "Content-Type:application/json" http://localhost:8083/connectors/local-console-sink/config \
+        -d '{
+          "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+          "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+          "value.converter": "org.apache.kafka.connect.json.JsonConverter",          
+          "schemas.enable": false,
+          "key.converter.schemas.enable": false,
+          "value.converter.schemas.enable": false,
+          "topics": "flugdaten",
+          "topic": "flugdaten",
+          "tasks.max": 1,
+          "errors.tolerance": "all",
+          "errors.deadletterqueue.topic.name":"dlq_local-console-sink",
+          "errors.deadletterqueue.context.headers.enable":true
+        }'
+        sleep infinity
