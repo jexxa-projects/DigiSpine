@@ -3,27 +3,55 @@ version: "3.7"
 services:
   risingwave: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
     image:  risingwavelabs/risingwave:latest
-    command: >
-      standalone
-      --meta-opts=" --backend sql --sql-endpoint postgres://postgres:@postgres:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9500 --state-store hummock+minio://s3-admin@minio:9100/risingwave --data-directory hummock_001 --connector-rpc-endpoint 0.0.0.0:50051" 
-      --frontend-opts=" --listen-addr 0.0.0.0:4566 --health-check-listener-addr 0.0.0.0:6786 --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:4566 --meta-addr http://0.0.0.0:5690 "  
-      --compute-opts="--listen-addr 0.0.0.0:5688 --advertise-addr 0.0.0.0:5688 --prometheus-listener-addr 0.0.0.0:1250 --async-stack-trace verbose --connector-rpc-endpoint 0.0.0.0:50051 --role both --meta-address http://0.0.0.0:5690"  
-      --compactor-opts=" --listen-addr 0.0.0.0:6660  --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:6660 --meta-address http://0.0.0.0:5690"
+    stop_grace_period: 120s
+    secrets:
+      - ops_s3_storage_pw
+      - ops_s3_storage_user
 
     environment:
-      - RUST_LOG=warn
+      - RUST_LOG=warn,risingwave_meta::hummock::manager::compaction::compaction_group_schedule=error,pgwire::pg_server=warn,rdkafka=error
       - ENABLE_TELEMETRY=false
+      - AWS_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://s3.storage:9100
+      - S3_ENDPOINT=s3.storage:9100
+      - S3_BUCKET=risingwave-dev
+      - S3_PATH=hummok_001_dev
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # Auslesen der Secrets in temporäre Variablen
+        AWS_ACCESS_KEY_ID=`cat /run/secrets/ops_s3_storage_user`
+        AWS_SECRET_ACCESS_KEY=`cat /run/secrets/ops_s3_storage_pw`
+
+        # Erstellen der TOML-Datei mit den Inhalten der Secrets
+        printf '[system]\nstate_store = "hummock+minio://%s:%s@%s/%s"\n' \
+        "$$AWS_ACCESS_KEY_ID" "$$AWS_SECRET_ACCESS_KEY" "$$S3_ENDPOINT" "$$S3_BUCKET" > /tmp/risingwave.toml &&
+        printf 'data_directory = "%s"\n' "$$S3_PATH" >> /tmp/risingwave.toml &&
+
+        printf '[storage.s3]\nendpoint = "%s"\naccess_key = "%s"\nsecret_key = "%s"\n' \
+        "$$AWS_ENDPOINT_URL" "$$AWS_ACCESS_KEY_ID" "$$AWS_SECRET_ACCESS_KEY" >> /tmp/risingwave.toml &&
+
+
+        # Starten von RisingWave
+        exec /risingwave/bin/risingwave standalone \
+          --config-path /tmp/risingwave.toml \
+          --meta-opts="--backend sql --sql-endpoint postgres://postgres:@postgres-dev:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9090 --connector-rpc-endpoint 0.0.0.0:50051" \
+          --frontend-opts=" --listen-addr 0.0.0.0:4566 --health-check-listener-addr 0.0.0.0:6786 --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:4566 --meta-addr http://0.0.0.0:5690 "  \
+          --compute-opts="--listen-addr 0.0.0.0:5688 --advertise-addr 0.0.0.0:5688 --prometheus-listener-addr 0.0.0.0:1250 --async-stack-trace verbose --connector-rpc-endpoint 0.0.0.0:50051 --role both --meta-address http://0.0.0.0:5690"  \
+          --compactor-opts=" --listen-addr 0.0.0.0:6660  --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:6660 --meta-address http://0.0.0.0:5690"
+    
 
     ports:
-      - "4566:4566"
-      - "5691:5691"
+      - "5566:4566"
+      - "6691:5691"
 
     networks:
       - internal
       - s3-storage
 
-  postgres:
+  postgres-dev:
     image: "postgres:18"
+    stop_grace_period: 120s
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_USER=postgres
@@ -36,37 +64,20 @@ services:
 
     networks:
       - internal
-      - s3-storage
-
-  postgres-dp:
-    image: "postgres:18"
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=dataproduct
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    volumes:
-      - "postgres-dp-data:/var/lib/postgresql"
-
-    restart: always
-
-    networks:
-      - internal
-      - s3-storage
 
 volumes:
-
   postgres-data:
     driver: distributed-docker-volumes
 
-  postgres-dp-data:
-    driver: distributed-docker-volumes
-
-
+secrets:
+  ops_s3_storage_pw:
+    external: true
+  ops_s3_storage_user:
+    external: true
 
 networks:
   internal:
   s3-storage:
+    external: true
+  monitoring:
     external: true
