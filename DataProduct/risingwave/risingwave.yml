@@ -25,7 +25,13 @@ services:
     environment:
       <<: *risingwave-env
       RW_NODE_TYPE: "meta-node"
-      RW_NODE_OPTS: "--backend sql --sql-endpoint postgres://postgres:@postgres-dev:5432/metadata --listen-addr 0.0.0.0:5690 --advertise-addr meta-node:5690 --dashboard-host 0.0.0.0:5691 --prometheus-listener-addr 0.0.0.0:1250"
+      RW_NODE_OPTS: >
+        --backend sql 
+        --sql-endpoint postgres://postgres:@postgres-dev:5432/metadata 
+        --listen-addr 0.0.0.0:5690 
+        --advertise-addr meta-node:5690 
+        --dashboard-host 0.0.0.0:5691 
+        --prometheus-listener-addr 0.0.0.0:1250
     configs:
       - source: risingwave_entrypoint_v1
         target: /entrypoint.sh
@@ -55,13 +61,12 @@ services:
     environment:
       <<: *risingwave-env
       RW_NODE_TYPE: "compute-node"
-      #-- addvertise-addr wird in risingwave_entrypoint_v1 gesetzt
       RW_NODE_OPTS: >
         --listen-addr 0.0.0.0:5688 
         --meta-address http://meta-node:5690  
         --prometheus-listener-addr 0.0.0.0:1250
     configs:
-      - source: risingwave_entrypoint_v1
+      - source: risingwave_entrypoint_v3
         target: /entrypoint.sh
         mode: 0555
     entrypoint: ["sh", "/entrypoint.sh"]
@@ -85,7 +90,11 @@ services:
     environment:
       <<: *risingwave-env
       RW_NODE_TYPE: "compactor-node"
-      RW_NODE_OPTS: "--listen-addr 0.0.0.0:6660 --advertise-addr compactor-node:6660 --meta-address http://meta-node:5690  --prometheus-listener-addr 0.0.0.0:1250"
+      RW_NODE_OPTS: >
+        --listen-addr 0.0.0.0:6660 
+        --advertise-addr compactor-node:6660 
+        --meta-address http://meta-node:5690  
+        --prometheus-listener-addr 0.0.0.0:1250
     configs:
       - source: risingwave_entrypoint_v1
         target: /entrypoint.sh
