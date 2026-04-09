@@ -66,7 +66,7 @@ services:
         --meta-address http://meta-node:5690  
         --prometheus-listener-addr 0.0.0.0:1250
     configs:
-      - source: risingwave_entrypoint_v3
+      - source: risingwave_entrypoint_v1
         target: /entrypoint.sh
         mode: 0555
     entrypoint: ["sh", "/entrypoint.sh"]
@@ -162,7 +162,4 @@ secrets:
 configs:
 
   risingwave_entrypoint_v1:
-    external: true
-
-  risingwave_entrypoint_v3:
     external: true
