@@ -112,14 +112,11 @@ services:
       --advertise-addr frontend-node:4566
       --meta-addr http://meta-node:5690
       --prometheus-listener-addr 0.0.0.0:1250
+      --health-check-listener-addr 0.0.0.0:6786    
+
     ports:
       - "4566:4566"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "-s", "http://localhost:1250/metrics", "-o", "/dev/null"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 130s
+
   postgres-dev:
     image: "postgres:18"
     stop_grace_period: 120s
