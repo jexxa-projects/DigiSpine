@@ -5,6 +5,8 @@ set -e
 # RisingWave erkennt diese Variablen automatisch für den S3-Zugriff
 export AWS_ACCESS_KEY_ID=$(cat /run/secrets/ops_s3_storage_user)
 export AWS_SECRET_ACCESS_KEY=$(cat /run/secrets/ops_s3_storage_pw)
+# In der entrypoint.sh vor dem exec ergänzen:
+export CONTAINER_IP=$(hostname -i)
 
 # 2. Minimale TOML Datei ohne den veralteten [storage.s3] Block
 cat <<EOF > /tmp/risingwave.toml
