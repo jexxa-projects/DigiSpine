@@ -9,7 +9,7 @@ services:
       - ops_s3_storage_pw
       - ops_s3_storage_user
 
-    environment:
+    environment: &risingwave-env
       - RUST_LOG=warn,risingwave_meta::hummock::manager::compaction::compaction_group_schedule=error,pgwire::pg_server=warn,rdkafka=error
       - ENABLE_TELEMETRY=false
       - AWS_REGION=us-east-1
@@ -43,24 +43,17 @@ services:
     
 
     ports:
-      - "5692:5691"
+      - "5691:5691"
 
-
-  risingwave: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
+  # --- COMPUTE NODE ---
+  compute-node: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
     image:  risingwavelabs/risingwave:latest
     stop_grace_period: 120s
     secrets:
       - ops_s3_storage_pw
       - ops_s3_storage_user
 
-    environment:
-      - RUST_LOG=warn,risingwave_meta::hummock::manager::compaction::compaction_group_schedule=error,pgwire::pg_server=warn,rdkafka=error
-      - ENABLE_TELEMETRY=false
-      - AWS_REGION=us-east-1
-      - AWS_ENDPOINT_URL=http://192.168.178.79:8100
-      - S3_ENDPOINT=192.168.178.79:8100
-      - S3_BUCKET=risingwave-dev
-      - S3_PATH=hummok_001_dev
+    environment: *risingwave-env
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -77,19 +70,45 @@ services:
         "$$AWS_ENDPOINT_URL" "$$AWS_ACCESS_KEY_ID" "$$AWS_SECRET_ACCESS_KEY" >> /tmp/risingwave.toml &&
 
 
-        # Starten von RisingWave
-        exec /risingwave/bin/risingwave standalone \
+        # start compute-node 
+        exec /risingwave/bin/risingwave compute-node \
           --config-path /tmp/risingwave.toml \
-          --meta-opts="--backend sql --sql-endpoint postgres://postgres:@postgres-dev:5432/metadata  --listen-addr 0.0.0.0:5690  --advertise-addr 0.0.0.0:5690 --dashboard-host 0.0.0.0:5691 --prometheus-host 0.0.0.0:1250 --prometheus-endpoint http://prometheus:9090 --connector-rpc-endpoint 0.0.0.0:50051" \
-          --frontend-opts=" --listen-addr 0.0.0.0:4566 --health-check-listener-addr 0.0.0.0:6786 --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:4566 --meta-addr http://0.0.0.0:5690 "  \
-          --compute-opts="--listen-addr 0.0.0.0:5688 --advertise-addr 0.0.0.0:5688 --prometheus-listener-addr 0.0.0.0:1250 --async-stack-trace verbose --connector-rpc-endpoint 0.0.0.0:50051 --role both --meta-address http://0.0.0.0:5690"  \
-          --compactor-opts=" --listen-addr 0.0.0.0:6660  --prometheus-listener-addr 0.0.0.0:1250 --advertise-addr 0.0.0.0:6660 --meta-address http://0.0.0.0:5690"
-    
+          --listen-addr 0.0.0.0:5688 \
+          --advertise-addr compute-node:5688 \
+          --meta-address http://meta-node:5690
 
-    ports:
-      - "4566:4566"
-      - "5691:5691"
 
+  # --- COMPACTOR NODE ---
+  compactor-node: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
+    image:  risingwavelabs/risingwave:latest
+    stop_grace_period: 120s
+    secrets:
+      - ops_s3_storage_pw
+      - ops_s3_storage_user
+
+    environment: *risingwave-env
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # Auslesen der Secrets in temporäre Variablen
+        AWS_ACCESS_KEY_ID=`cat /run/secrets/ops_s3_storage_user`
+        AWS_SECRET_ACCESS_KEY=`cat /run/secrets/ops_s3_storage_pw`
+
+        # Erstellen der TOML-Datei mit den Inhalten der Secrets
+        printf '[system]\nstate_store = "hummock+minio://%s:%s@%s/%s"\n' \
+        "$$AWS_ACCESS_KEY_ID" "$$AWS_SECRET_ACCESS_KEY" "$$S3_ENDPOINT" "$$S3_BUCKET" > /tmp/risingwave.toml &&
+        printf 'data_directory = "%s"\n' "$$S3_PATH" >> /tmp/risingwave.toml &&
+
+        printf '[storage.s3]\nendpoint = "%s"\naccess_key = "%s"\nsecret_key = "%s"\n' \
+        "$$AWS_ENDPOINT_URL" "$$AWS_ACCESS_KEY_ID" "$$AWS_SECRET_ACCESS_KEY" >> /tmp/risingwave.toml &&
+
+
+        # start compactor-node
+        exec /risingwave/bin/risingwave compactor-node \
+          --config-path /tmp/risingwave.toml \
+          --listen-addr 0.0.0.0:6660 \
+          --advertise-addr compactor-node:6660 \
+          --meta-address http://meta-node:5690
 
   postgres-dev:
     image: "postgres:18"
@@ -101,8 +120,6 @@ services:
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - "postgres-data:/var/lib/postgresql"
-
-    restart: always
 
 
 volumes:
