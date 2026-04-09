@@ -110,6 +110,24 @@ services:
           --advertise-addr compactor-node:6660 \
           --meta-address http://meta-node:5690
 
+  # --- frontend NODE ---
+  frontend-node: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
+    image:  risingwavelabs/risingwave:latest
+    stop_grace_period: 120s
+    secrets:
+      - ops_s3_storage_pw
+      - ops_s3_storage_user
+
+    environment: *risingwave-env
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      /risingwave/bin/risingwave frontend-node
+      --listen-addr 0.0.0.0:4566
+      --advertise-addr frontend-node:4566
+      --meta-addr http://meta-node:5690
+    ports:
+      - "4566:4566"
+
   postgres-dev:
     image: "postgres:18"
     stop_grace_period: 120s
