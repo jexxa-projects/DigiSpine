@@ -36,7 +36,6 @@ services:
       - "5691:5691"
 
     healthcheck:
-      # -f: Fehler bei HTTP-Errors, -s: Silent (kein Fortschrittsbalken), -o /dev/null: Daten wegwerfen
       test: ["CMD", "curl", "-f", "-s", "http://localhost:1250/metrics", "-o", "/dev/null"]
       interval: 15s
       timeout: 5s
@@ -63,7 +62,6 @@ services:
         mode: 0555
     entrypoint: ["sh", "/entrypoint.sh"]
     healthcheck:
-      # -f: Fehler bei HTTP-Errors, -s: Silent (kein Fortschrittsbalken), -o /dev/null: Daten wegwerfen
       test: ["CMD", "curl", "-f", "-s", "http://localhost:1250/metrics", "-o", "/dev/null"]
       interval: 15s
       timeout: 5s
@@ -91,7 +89,6 @@ services:
     # WICHTIG: Das hier muss dazu, um das Standard-Verhalten des Images zu ändern
     entrypoint: ["sh", "/entrypoint.sh"]
     healthcheck:
-      # -f: Fehler bei HTTP-Errors, -s: Silent (kein Fortschrittsbalken), -o /dev/null: Daten wegwerfen
       test: ["CMD", "curl", "-f", "-s", "http://localhost:1250/metrics", "-o", "/dev/null"]
       interval: 15s
       timeout: 5s
@@ -114,9 +111,15 @@ services:
       --listen-addr 0.0.0.0:4566
       --advertise-addr frontend-node:4566
       --meta-addr http://meta-node:5690
+      --prometheus-listener-addr 0.0.0.0:1250
     ports:
       - "4566:4566"
-
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-s", "http://localhost:1250/metrics", "-o", "/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 130s
   postgres-dev:
     image: "postgres:18"
     stop_grace_period: 120s
@@ -147,6 +150,7 @@ secrets:
     external: true
 
 configs:
+
   risingwave_entrypoint_v1:
     external: true
 
