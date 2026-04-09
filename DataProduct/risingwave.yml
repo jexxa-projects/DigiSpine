@@ -14,6 +14,8 @@ services:
   # --- META NODE ---
   meta-node: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
     image:  risingwavelabs/risingwave:latest
+    networks:
+      - risingwave_default
     stop_grace_period: 120s
     secrets:
       - ops_s3_storage_pw
@@ -56,6 +58,8 @@ services:
     secrets:
       - ops_s3_storage_pw
       - ops_s3_storage_user
+    networks:
+      - risingwave_default
 
     environment:
       <<: *risingwave-env
@@ -90,6 +94,8 @@ services:
     secrets:
       - ops_s3_storage_pw
       - ops_s3_storage_user
+    networks:
+      - risingwave_default
 
     environment:
       <<: *risingwave-env
@@ -123,6 +129,8 @@ services:
     secrets:
       - ops_s3_storage_pw
       - ops_s3_storage_user
+    networks:
+      - risingwave_default
 
     entrypoint: ["/bin/sh", "-c"]
     command: >
@@ -136,6 +144,8 @@ services:
   postgres-dev:
     image: "postgres:18"
     stop_grace_period: 120s
+    networks:
+      - risingwave_default
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_USER=postgres
@@ -145,6 +155,10 @@ services:
       - "postgres-data:/var/lib/postgresql"
 
 
+networks:
+  risingwave_default:
+    driver: overlay
+    attachable: true
 
 volumes:
   postgres-data:
