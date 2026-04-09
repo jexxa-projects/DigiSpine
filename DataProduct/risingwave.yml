@@ -1,5 +1,15 @@
 version: "3.7"
 
+# Zentraler Environment-Anker
+x-env: &risingwave-env
+  RUST_LOG: warn,risingwave_meta::hummock::manager::compaction::compaction_group_schedule=error,pgwire::pg_server=warn,rdkafka=error
+  ENABLE_TELEMETRY: "false"
+  AWS_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://192.168.178.79:8100
+  S3_ENDPOINT: 192.168.178.79:8100
+  S3_BUCKET: risingwave-dev
+  S3_PATH: hummok_001_dev
+
 services:
   # --- META NODE ---
   meta-node: # Note: Risingwave is able to start multiple computing nodes even dedicated to streaming or serving (sql)
@@ -9,14 +19,8 @@ services:
       - ops_s3_storage_pw
       - ops_s3_storage_user
 
-    environment: &risingwave-env
-      - RUST_LOG=warn,risingwave_meta::hummock::manager::compaction::compaction_group_schedule=error,pgwire::pg_server=warn,rdkafka=error
-      - ENABLE_TELEMETRY=false
-      - AWS_REGION=us-east-1
-      - AWS_ENDPOINT_URL=http://192.168.178.79:8100
-      - S3_ENDPOINT=192.168.178.79:8100
-      - S3_BUCKET=risingwave-dev
-      - S3_PATH=hummok_001_dev
+    environment:
+      <<: *risingwave-env
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -53,7 +57,8 @@ services:
       - ops_s3_storage_pw
       - ops_s3_storage_user
 
-    environment: *risingwave-env
+    environment:
+      <<: *risingwave-env
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -86,7 +91,8 @@ services:
       - ops_s3_storage_pw
       - ops_s3_storage_user
 
-    environment: *risingwave-env
+    environment:
+      <<: *risingwave-env
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -118,7 +124,6 @@ services:
       - ops_s3_storage_pw
       - ops_s3_storage_user
 
-    environment: *risingwave-env
     entrypoint: ["/bin/sh", "-c"]
     command: >
       /risingwave/bin/risingwave frontend-node
@@ -138,6 +143,7 @@ services:
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - "postgres-data:/var/lib/postgresql"
+
 
 
 volumes:
