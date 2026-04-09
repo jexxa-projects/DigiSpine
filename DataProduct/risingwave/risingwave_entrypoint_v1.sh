@@ -20,4 +20,9 @@ data_directory = "${S3_PATH}"
 EOF
 
 # 3. Starten der Komponente
+if [ "$RW_NODE_TYPE" = "compute-node" ]; then
+  # RW_NODE_OPTS dynamisch überschreiben
+  RW_NODE_OPTS="$RW_NODE_OPTS --advertise-addr ${CONTAINER_IP}:5688"
+fi
+
 exec /risingwave/bin/risingwave "$RW_NODE_TYPE" --config-path /tmp/risingwave.toml $RW_NODE_OPTS
