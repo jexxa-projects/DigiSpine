@@ -1,8 +1,21 @@
 #!/bin/sh
-USER=$(cat /run/secrets/ops_s3_storage_user)
-PASS=$(cat /run/secrets/ops_s3_storage_pw)
-printf '[system]\nstate_store = "hummock+minio://%s:%s@%s/%s"\ndata_directory = "%s"\n' \
-  "$USER" "$PASS" "$S3_ENDPOINT" "$S3_BUCKET" "$S3_PATH" > /tmp/risingwave.toml
-printf '\n[storage.s3]\nendpoint = "%s"\naccess_key = "%s"\nsecret_key = "%s"\n' \
-  "$AWS_ENDPOINT_URL" "$USER" "$PASS" >> /tmp/risingwave.toml
+set -e
+
+# 1. Secrets auslesen und als Standard-AWS-Variablen exportieren
+# RisingWave erkennt diese Variablen automatisch für den S3-Zugriff
+export AWS_ACCESS_KEY_ID=$(cat /run/secrets/ops_s3_storage_user)
+export AWS_SECRET_ACCESS_KEY=$(cat /run/secrets/ops_s3_storage_pw)
+
+# 2. Minimale TOML Datei ohne den veralteten [storage.s3] Block
+cat <<EOF > /tmp/risingwave.toml
+[system]
+state_store = "hummock+minio://${AWS_ACCESS_KEY_ID}:${AWS_SECRET_ACCESS_KEY}@${S3_ENDPOINT}/${S3_BUCKET}"
+data_directory = "${S3_PATH}"
+
+[storage]
+# Falls du Pfad-basierten Zugriff für MinIO erzwingen willst:
+# is_shared_buffer_enabled = true
+EOF
+
+# 3. Starten der Komponente
 exec /risingwave/bin/risingwave "$RW_NODE_TYPE" --config-path /tmp/risingwave.toml $RW_NODE_OPTS
