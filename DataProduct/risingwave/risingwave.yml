@@ -115,8 +115,14 @@ services:
     secrets:
       - ops_s3_storage_pw
       - ops_s3_storage_user
+      - risingwave_tls_key
+      - risingwave_tls_cert
     networks:
       - risingwave_default
+    environment:
+      - RW_SSL_CERT=/run/secrets/risingwave_tls_cert
+      - RW_SSL_KEY=/run/secrets/risingwave_tls_key
+      - RW_SSL_ENFORCE=true
 
     entrypoint: ["/bin/sh", "-c"]
     command: >
@@ -125,8 +131,7 @@ services:
       --advertise-addr frontend-node:4566
       --meta-addr http://meta-node:5690
       --prometheus-listener-addr 0.0.0.0:1250
-      --health-check-listener-addr 0.0.0.0:6786    
-
+      --health-check-listener-addr 0.0.0.0:6786
     ports:
       - "4566:4566"
 
@@ -157,6 +162,10 @@ secrets:
   ops_s3_storage_pw:
     external: true
   ops_s3_storage_user:
+    external: true
+  risingwave_tls_cert:
+    external: true
+  risingwave_tls_key:
     external: true
 
 configs:
