@@ -120,18 +120,24 @@ services:
     networks:
       - risingwave_default
     environment:
-      - RW_SSL_CERT=/run/secrets/risingwave_tls_cert
-      - RW_SSL_KEY=/run/secrets/risingwave_tls_key
-      - RW_SSL_ENFORCE=true
+      <<: *risingwave-env
+      RW_SSL_CERT: /run/secrets/risingwave_tls_cert
+      RW_SSL_KEY: /run/secrets/risingwave_tls_key
+      RW_SSL_ENFORCE: "true"
+      RW_NODE_TYPE: "frontend-node"
+      RW_NODE_OPTS: >
+        --listen-addr 0.0.0.0:4566 
+        --health-check-listener-addr 0.0.0.0:6786
+        --prometheus-listener-addr 0.0.0.0:1250 
+        --advertise-addr 0.0.0.0:4566 
+        --meta-addr http://meta-node:5690
 
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      /risingwave/bin/risingwave frontend-node
-      --listen-addr 0.0.0.0:4566
-      --advertise-addr frontend-node:4566
-      --meta-addr http://meta-node:5690
-      --prometheus-listener-addr 0.0.0.0:1250
-      --health-check-listener-addr 0.0.0.0:6786
+    configs:
+      - source: risingwave_entrypoint_v1
+        target: /entrypoint.sh
+        mode: 0555
+    # WICHTIG: Das hier muss dazu, um das Standard-Verhalten des Images zu ändern
+    entrypoint: ["sh", "/entrypoint.sh"]
     ports:
       - "4566:4566"
 
