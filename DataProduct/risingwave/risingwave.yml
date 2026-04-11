@@ -140,6 +140,25 @@ services:
     entrypoint: ["sh", "/entrypoint.sh"]
     ports:
       - "4566:4566"
+  risingwave-console:
+    image: risingwavelabs/risingwave-console:latest-pgbundle
+    networks:
+      - risingwave_default
+    environment:
+      # Passwort für den Login in die Web-UI
+      - RCONSOLE_ROOT_PASSWORD=test1234
+      # Verbindung zum RisingWave Meta-Node (gRPC)
+      - RW_META_ADDR=http://meta-node:5690
+      # Verbindung zum RisingWave Frontend (Postgres-Protokoll)
+      - RW_FRONTEND_ADDR=frontend-node:4566
+      - RW_FRONTEND_USER=root
+    volumes:
+      - console-data:/var/lib/postgresql
+    ports:
+      - "8020:8020"
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   postgres-dev:
     image: "postgres:18"
@@ -162,7 +181,7 @@ networks:
 
 volumes:
   postgres-data:
-
+  console-data: # Neues Volume für die interne DB der Console
 
 secrets:
   ops_s3_storage_pw:
