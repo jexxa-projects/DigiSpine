@@ -36,7 +36,7 @@ services:
 
       # Set logging to WARN
       KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
-      KAFKA_LOG4J_LOGGERS: "org.apache.kafka=WARN,kafka=WARN,state.change.logger=WARN"
+      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
@@ -83,9 +83,10 @@ services:
       # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
       CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
 
+      # Required to avoid log spamming from MetdataLoader
       # Set logging to WARN
       KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
-      KAFKA_LOG4J_LOGGERS: "org.apache.kafka=WARN,kafka=WARN,state.change.logger=WARN"
+      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
@@ -131,9 +132,9 @@ services:
       # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
       CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
 
-      # Set logging to WARN
+      # Required to avoid log spamming from MetdataLoader
       KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
-      KAFKA_LOG4J_LOGGERS: "org.apache.kafka=WARN,kafka=WARN,state.change.logger=WARN"
+      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
 
       # Required to enable Confluent Schema Registry
       KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
@@ -184,29 +185,17 @@ services:
       timeout: 10s
       retries: 3
 
-  ksqldbServer:
-    image: confluentinc/cp-ksqldb-server:latest
-    hostname: ksqldbServer
+  redpanda-console:
+    image: redpandadata/console:latest
+
     ports:
-      - "8088:8088"
+      - "9081:8080"
     environment:
-      KSQL_LISTENERS: http://0.0.0.0:8088
-      KSQL_BOOTSTRAP_SERVERS: kafka1:29092,kafka2:29092,kafka3:29092
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schemaregistry:8081
-      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
-      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
-      KSQL_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
-
-    volumes:
-      - ksqldb-data:/var/lib/ksqldb
-
-  ksqldb-cli:
-    image: confluentinc/cp-ksqldb-cli:latest
-    entrypoint: /bin/sh
-    tty: true
+      KAFKA_BROKERS: kafka1:29092
+      SCHEMAREGISTRY_ENABLED: "true"
+      SCHEMAREGISTRY_URLS: http://schemaregistry:8081
 
 volumes:
   kafka1-data:
   kafka2-data:
   kafka3-data:
-  ksqldb-data:
