@@ -5,151 +5,76 @@
 # 'kafka-broker' with the name or IP of your kafka-broker
 
 version: '3.8'
+
+# 1. Gemeinsame Kafka-Basis (Image, Deploy, Logging, Schema-Validierung)
+x-kafka-common: &kafka-common
+  image: confluentinc/cp-kafka
+  deploy:
+    placement:
+      constraints:
+        - "node.role == manager"
+
+
+# 2. Gemeinsame Environment-Variablen (Quorum, Cluster-ID, Replikation)
+x-kafka-env: &kafka-env
+  KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
+  KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_PROCESS_ROLES: 'controller,broker'
+  KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093,2@kafka2:29093,3@kafka3:29093'
+  CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
+  KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+  KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
+  KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
+  KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
+  KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
+  KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
+
 services:
   kafka1:
-    image: confluentinc/cp-kafka
+    <<: *kafka-common
     hostname: kafka1
     ports:
       - "9092:9092"
     environment:
-      #Define the name for Broker and controller and protocols
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
-
-      #Define the ports used for broker, controller and external
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
       KAFKA_LISTENERS: BROKER://kafka1:29092,CONTROLLER://kafka1:29093,EXTERNAL://:9092
       # TODO: Adjust advertised IP address from 'kafka-broker:9092' to hostname or ip address of running system
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka1:29092,EXTERNAL://kafka-broker:9092
-
-      # Configure replication factors for autocreate topics, consumer offsets, log-topic and re-balance delay
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-
-      # Following parameters are required to run Kafka in Kraft mode (without Zookeeper)
-      KAFKA_PROCESS_ROLES: 'controller,broker'
-      KAFKA_NODE_ID: 1
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093,2@kafka2:29093,3@kafka3:29093'
-      # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
-      CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
-
-      # Set logging to WARN
-      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
-      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
-
-      # Required to enable Confluent Schema Registry
-      KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
-      KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
-
     volumes:
       - kafka1-data:/var/lib/kafka/data
 
-
-    deploy:
-      placement:
-        constraints:
-          # TODO: To ensure that kafka instances are not placed on the same VM, you should define different constraints such as manager or worker to ensure that at least two instances run on different VMs
-          - "node.role == manager"
-
   kafka2:
-    image: confluentinc/cp-kafka
+    <<: *kafka-common
     hostname: kafka2
     ports:
       - "9093:9092"
     environment:
-
-      #Define the name for Broker and controller and protocols
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
-
-      #Define the ports used for broker, controller and external
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
       KAFKA_LISTENERS: BROKER://kafka2:29092,CONTROLLER://kafka2:29093,EXTERNAL://:9092
       # TODO: Adjust advertised IP address from 'kafka-broker:9093' to hostname or ip address of running system
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:29092,EXTERNAL://kafka-broker:9093
-
-      # Configure replication factors for autocreate topics, consumer offsets,log-topic and re-balance delay
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-
-      # Following parameters are required to run Kafka in Kraft mode (without Zookeeper)
-      KAFKA_PROCESS_ROLES: 'controller,broker'
-      KAFKA_NODE_ID: 2
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093,2@kafka2:29093,3@kafka3:29093'
-      # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
-      CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
-
-      # Required to avoid log spamming from MetdataLoader
-      # Set logging to WARN
-      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
-      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
-
-      # Required to enable Confluent Schema Registry
-      KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
-      KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
-
     volumes:
       - kafka2-data:/var/lib/kafka/data
 
-    deploy:
-      placement:
-        constraints:
-          # TODO: To ensure that kafka instances are not placed on the same VM, you should define different constraints such as manager or worker to ensure that at least two instances run on different VMs
-          - "node.role == manager"
-
   kafka3:
-    image: confluentinc/cp-kafka
+    <<: *kafka-common
     hostname: kafka3
     ports:
       - "9094:9092"
     environment:
-
-      # Define the name for Broker and controller and protocols
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT,EXTERNAL:PLAINTEXT
-
-      # Define the ports used for broker, controller and external
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
       KAFKA_LISTENERS: BROKER://kafka3:29092,CONTROLLER://kafka3:29093,EXTERNAL://:9092
       # TODO: Adjust advertised IP address from 'kafka-broker:9094' to hostname or ip address of running system
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka3:29092,EXTERNAL://kafka-broker:9094
-
-      # Configure replication factors for autocreate topics, consumer offsets,log-topic and re-balance delay
-      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-
-      # Following parameters are required to run Kafka in Kraft mode (without Zookeeper)
-      KAFKA_PROCESS_ROLES: 'controller,broker'
-      KAFKA_NODE_ID: 3
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka1:29093,2@kafka2:29093,3@kafka3:29093'
-      # TODO: Generate ONE kafka-ID using ./bin/kafka-storage.sh random-uuid and set it to all instances
-      CLUSTER_ID: 'aiWo7IWazngRchmPES6q5A=='
-
-      # Required to avoid log spamming from MetdataLoader
-      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
-      KAFKA_LOG4J_LOGGERS: 'org.apache.kafka.image.loader.MetadataLoader=WARN'
-
-      # Required to enable Confluent Schema Registry
-      KAFKA_CONFLUENT_SUPPORT_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: "http://schemaregistry:8081"
-      KAFKA_CONFLUENT_VALUE_SCHEMA_VALIDATION: "true"
-      KAFKA_CONFLUENT_KEY_SCHEMA_VALIDATION: "true"
-
     volumes:
       - kafka3-data:/var/lib/kafka/data
-
-    deploy:
-      placement:
-        constraints:
-          # TODO: To ensure that kafka instances are not placed on the same VM, you should define different constraints such as manager or worker to ensure that at least two instances run on different VMs
-          - "node.role == manager"
 
   schemaregistry:
     image: confluentinc/cp-schema-registry:latest
@@ -166,34 +91,20 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_TOPIC: _schemas
 
   kafka-ui:
-    container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
     ports:
       - "9080:8080"
-
     environment:
       DYNAMIC_CONFIG_ENABLED: 'true'
       KAFKA_CLUSTERS_0_NAME: digispine-production
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:29092,kafka2:29092,kafka3:29092
-      # Automatically register schemaregistry and ksqldbServer in kafka-ui
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schemaregistry:8081"
       KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldbServer:8088
-
     healthcheck:
       test: ["CMD-SHELL", "wget -nv -t1 --spider 'http://localhost:8080'"]
       interval: 10s
       timeout: 10s
       retries: 3
-
-  redpanda-console:
-    image: redpandadata/console:latest
-
-    ports:
-      - "9081:8080"
-    environment:
-      KAFKA_BROKERS: kafka1:29092
-      SCHEMAREGISTRY_ENABLED: "true"
-      SCHEMAREGISTRY_URLS: http://schemaregistry:8081
 
 volumes:
   kafka1-data:
