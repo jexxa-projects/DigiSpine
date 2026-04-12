@@ -156,9 +156,6 @@ services:
       - console-data:/var/lib/postgresql
     ports:
       - "8020:8020"
-    deploy:
-      restart_policy:
-        condition: on-failure
 
   postgres-dev:
     image: "postgres:18"
