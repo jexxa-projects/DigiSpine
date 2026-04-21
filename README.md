@@ -1,77 +1,249 @@
 # DigiSpine
-*A digital backbone for functionally networking business applications to enable seamless interaction with business data.*
+*A domain-driven event backbone for operational communication and real-time intelligence.*
+
+---
 
 ## Overview
-DigiSpine provides a unified, domain-driven digital backbone for manufacturing and production environments. It connects business applications across domains and enables both operational communication and real-time analytics. By treating business processes as event streams and exposing well-defined data products, DigiSpine creates a consistent, scalable foundation for modern industrial solutions.
+
+DigiSpine is a structural approach to building **event-native, domain-aligned systems** in complex, legacy-heavy environments.
+
+It implements the **Reality Layer** of the Adaptive Operational Intelligence (A-OI) architecture by representing operations as **authoritative streams of domain events**.
+
+Instead of centralizing data and logic, DigiSpine enables:
+
+- Continuous observation of operational reality
+- Loose coupling between systems
+- Real-time data flow within and across domains
 
 ---
 
-## Motivation
-Modern manufacturing and production facilities rely on a growing landscape of specialized business applications—MES, ERP, quality systems, logistics platforms, and analytical tools. These systems typically operate in silos, making it difficult to:
+## Key Idea
 
-- Exchange information seamlessly across domains and departments
-- Create integrated, real-time insights
-- Optimize production processes end-to-end
+> DigiSpine does not centralize reality — it makes domain-specific reality observable through events.
 
-DigiSpine addresses these challenges by enabling a functionally networked ecosystem based on domain-driven modeling, event streaming, and self-service data products.
+Each domain remains autonomous, while integration emerges through **explicit semantic translation and controlled event exchange**.
 
 ---
 
-## Goals
+## Why DigiSpine?
 
-### **Operational Communication**
-- Seamless exchange of business-critical information between operational and strategic domains
-- Clear domain boundaries and shared language via DDD
-- Streamlined workflows across production, logistics, quality, maintenance, and planning
+Industrial environments typically consist of:
 
-### **Real-Time Analytics**
-- Continuous monitoring and optimization of manufacturing and production processes
-- Generation of analytical event streams derived from operational streams
-- Real-time and batch data products for analytics, BI, and AI systems
+- Legacy systems (PLCs, MES, LIMS, historians)
+- Domain-specific applications
+- Data silos and tight integrations
 
----
+Traditional approaches try to unify this complexity into central systems.
 
-## Design Approach
+**Result:**
 
-### **Domain-Driven Design (DDD)**
-DigiSpine uses DDD principles to ensure that the software model matches the real-world domain:
-- Ubiquitous language
-- Explicit boundaries
-- Subdomains mapped to self-contained components
-- Alignment with domain experts to ensure correctness and usability
-
-### **Self-Contained Systems (SCS)**
-DigiSpine follows a Self-Contained Systems architecture:
-- One SCS architecture per domain *(TODO: add SCS link)*
-- One SCS per subdomain, providing high autonomy and loose coupling
-- Clear interfaces for operational and analytical data flows
+- Loss of domain semantics
+- High integration effort
+- Limited flexibility
 
 ---
 
-## Core Ideas of DigiSpine
+## DigiSpine Approach
 
-### 1. **Operational Streams**
-The production process is represented as continuous streams of **DomainEvents** describing what happens on the shop floor.  
-*(TODO: add image/diagram)*
+DigiSpine replaces centralized integration with:
 
-### 2. **Analytical Streams**
-Analytical streams are derived from operational streams and are exposed by SCS components. They power:
-- Real-time dashboards
-- Machine learning applications
-- Predictive maintenance
-- Quality analytics
+- **Self-contained domain systems**
+- **Event-based communication**
+- **Explicit domain boundaries**
+- **Semantic translation between domains**
 
-### 3. **(Real-Time) Data Products**
-Following data mesh principles, domain teams expose **data products** that are:
-- Discoverable
-- Trustworthy
+---
+
+## Core Concepts
+
+### Domain Event Backbone
+
+Each domain operates its own DigiSpine:
+
+- Captures events from operational systems
+- Distributes them within the domain
+- Exposes them for controlled consumption
+
+DigiSpine represents an:
+
+> **Authoritative stream of observable operational reality**
+
+—not a shared data model.
+
+---
+
+### Event-Based Communication
+
+All interactions are modeled as events:
+
+- Immutable
+- Timestamped
+- Business-relevant
 - Versioned
-- Real-time or batch
 
-These products form the analytical backbone for downstream systems.
+Event types:
 
+- **Domain Events** → originate from operational systems
+- **Translated Events** → semantically transformed across domains
+- **Feedback Events** → drive actions back into operations
+
+---
+
+### Domain Ownership
+
+Each domain:
+
+- Owns its data, logic, and event semantics
+- Evolves independently
+- Defines its own contracts
+
+No global data model is shared across domains.
+
+---
+
+### Translation Layer (Domain Boundary)
+
+Cross-domain interaction is handled via an explicit Translation Layer:
+
+- Semantic mapping between domains
+- Context-aware transformation
+- Versioned contracts
+
+Example:
+
+Domain A: MoltenIronTapped  
+→ (translation)  
+Domain B: ChargeReady
+
+---
+
+### Real-Time Intelligence
+
+Each domain applies continuous analytics on its event streams using:
+
+- RisingWave (or similar streaming engines)
+
+Capabilities:
+
+- Continuous queries
+- Stateful stream processing
+- Pattern detection
+- Real-time aggregations
+
+> Analytics derive insights — they do not redefine domain semantics.
+
+---
+
+### Feedback-Driven Systems
+
+Insights are fed back into operations via events:
+
+- Trigger actions
+- Adjust processes
+- Enable continuous improvement
+
+---
+
+## Interaction Model
+
+### Within a Domain
+
+Operational Systems  
+→ Event Capture / Recreation  
+→ DigiSpine (Event Backbone)  
+→ Real-Time Analytics  
+→ Feedback Events  
+→ Operational Systems
+
+---
+
+### Across Domains
+
+Domain A Events  
+→ Translation Layer  
+→ Translated Events  
+→ Domain B DigiSpine
+
+---
+
+## Architectural Rules
+
+- Domains MUST NOT consume raw events from other domains
+- Cross-domain interaction MUST go through translation
+- Domain semantics MUST originate in the domain
+- Analytics MUST NOT redefine domain truth
+- Systems MUST be loosely coupled via events
+
+---
+
+## Supporting Frameworks
+
+DigiSpine is supported by complementary frameworks:
+
+- Jexxa → Domain-driven system architecture  
+  https://github.com/jexxa-projects/Jexxa
+
+- JLegMed → Legacy integration & semantic mediation  
+  https://github.com/jexxa-projects/JLegMed
+
+---
+
+## Technology Perspective
+
+DigiSpine is technology-agnostic, commonly implemented with:
+
+- Apache Kafka → event streaming
+- RisingWave → real-time analytics
+
+Technologies are implementation choices — not the architecture itself.
+
+---
+
+## Design Principles
+
+- Event-first architecture
+- Domain-driven design
+- Explicit semantics
+- Feedback over control
+- Decentralized intelligence
+- Continuous improvement
+
+---
+
+## Philosophy
+
+> Observe. Interpret. Signal. Decide. Act. Improve.
+
+---
+
+## Summary
+
+DigiSpine provides the foundation for:
+
+- Domain-driven integration
+- Real-time operational intelligence
+- Cross-domain coordination via semantic translation
+- Closed-loop, adaptive systems
+
+It replaces:
+
+- Centralized integration
+- Shared data models
+- Tight system coupling
+
+with:
+
+> **Event-driven, domain-aligned, continuously improving systems**
+
+![](images/digispine-reference-architecture.jpeg)
 ---
 
 ## Status
-_Work in progress (WIP)._  
-More sections—such as architecture diagrams, installation, deployment, APIs—will be added as the project evolves.
+
+Work in progress.
+
+This repository provides:
+
+- Structural foundation
+- Reference architecture
+- Integration patterns  
