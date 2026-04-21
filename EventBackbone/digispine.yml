@@ -46,6 +46,7 @@ services:
       # TODO: Adjust advertised IP address from 'kafka-broker:9092' to hostname or ip address of running system
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka1:29092,EXTERNAL://kafka-broker:9092
     volumes:
+      #TODO replace Volumes with direct mounts when running on VMs
       - kafka1-data:/var/lib/kafka/data
 
   kafka2:
@@ -60,6 +61,7 @@ services:
       # TODO: Adjust advertised IP address from 'kafka-broker:9093' to hostname or ip address of running system
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka2:29092,EXTERNAL://kafka-broker:9093
     volumes:
+      #TODO replace Volumes with direct mounts when running on VMs
       - kafka2-data:/var/lib/kafka/data
 
   kafka3:
@@ -74,6 +76,7 @@ services:
       # TODO: Adjust advertised IP address from 'kafka-broker:9094' to hostname or ip address of running system
       KAFKA_ADVERTISED_LISTENERS: BROKER://kafka3:29092,EXTERNAL://kafka-broker:9094
     volumes:
+      #TODO replace Volumes with direct mounts when running on VMs
       - kafka3-data:/var/lib/kafka/data
 
   schemaregistry:
@@ -106,7 +109,7 @@ services:
       timeout: 10s
       retries: 3
 
-volumes:
+volumes: #TODO replace Volumes with direct mounts when running on VMs
   kafka1-data:
   kafka2-data:
   kafka3-data:
