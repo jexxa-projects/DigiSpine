@@ -5,7 +5,7 @@
 
 ## Overview
 
-DigiSpine is a structural approach to building **event-native, domain-aligned systems** in complex, legacy-heavy environments.
+DigiSpine is a structural approach to building **event-native, domain-aligned, and long-lived systems** in complex, legacy-heavy environments.
 
 It implements the **Reality Layer** of the Adaptive Operational Intelligence (A-OI) architecture by representing operations as **authoritative streams of domain events**.
 
@@ -40,12 +40,12 @@ Traditional approaches try to unify this complexity into central systems.
 **Result:**
 
 - Loss of domain semantics
-- High integration effort
+- High-integration effort
 - Limited flexibility
 
 ---
 
-## DigiSpine Approach
+# DigiSpine Approach
 
 DigiSpine replaces centralized integration with:
 
@@ -58,7 +58,7 @@ DigiSpine replaces centralized integration with:
 
 ## Core Concepts
 
-### Domain Event Backbone
+### Self-Contained Systems (SCS)
 
 Each domain operates its own DigiSpine:
 
@@ -66,12 +66,68 @@ Each domain operates its own DigiSpine:
 - Distributes them within the domain
 - Exposes them for controlled consumption
 
-DigiSpine represents an:
 
-> **Authoritative stream of observable operational reality**
+```mermaid
+graph TD
 
-—not a shared data model.
+subgraph Global ["<b>DIGISPINE ARCHITECTURE OVERVIEW - Within a Domain</b>"]
+direction TB
 
+%% Der horizontale Backbone über allem
+  DS{{"<b>EVENT BACKBONE</b> \n (Centralized Event Streams)"}}
+
+%% Styling für den Backbone
+  style DS fill:#ffcc00,stroke:#333,stroke-width:3px,color:#000
+
+%% SCS A
+  subgraph SCSA ["SCS A (Microservice)"]
+    direction TB
+    UIA["UI"]:::fixedSize
+    BKA["DDD Backend"]:::fixedSize
+    STA[("Storage")]:::fixedSize
+    STA <--> BKA <--> UIA
+  end
+
+%% Domain B
+  subgraph SCSB ["SCS B (Legacy System)"]
+    direction TB
+    InvisibleB[" "]:::fixedSize
+    BKB["Event Recreation"]:::fixedSize
+    STB[("Legacy System/DB")]:::fixedSize
+    InvisibleB ~~~ BKB
+    BKB <--> STB 
+  end
+
+%% Domain C
+  subgraph SCSC ["SCS C (PLC Access)"]
+    direction TB
+    BKC["Event Creation <br> (optional)"]:::fixedSize
+    PLC["PLC / Sensor Gateway"]:::hardware
+    MCH["Machine / Production Line"]:::hardware
+    BKC <--> PLC
+    PLC <--> MCH
+  end
+end
+%% Verbindungen: Genau eine Verbindung pro SCS zum Backbone
+  DS <==> SCSA
+  DS <==> SCSB
+  DS <==> SCSC
+
+%% Globale Stylings (Orientiert an deinem Bild)
+
+  style UIA fill:#d1e9ff,stroke:#333
+  style InvisibleB fill:none,stroke:none,stroke-width:0px,color:#
+  style BKA fill:#d5f5e3,stroke:#333
+  style BKB fill:#d5f5e3,stroke:#333
+  style BKC fill:#d5f5e3,stroke:#333
+  
+  style STA fill:#fff4e5,stroke:#333
+  style STB fill:#fff4e5,stroke:#333
+  
+````
+
+
+> DigiSpine represents the **authoritative streams of observable operational reality** within a Domain —not a shared data model.
 ---
 
 ### Event-Based Communication
@@ -103,7 +159,34 @@ No global data model is shared across domains.
 
 ---
 
-### Translation Layer (Domain Boundary)
+### Real-Time Intelligence
+
+Each domain applies continuous analytics on its event streams using:
+
+- RisingWave (or similar streaming engines)
+
+Capabilities:
+
+- Continuous queries
+- Stateful stream processing
+- Pattern detection
+- Real-time aggregations
+
+> Analytics derive insights — they do not redefine domain semantics.
+
+---
+
+### Feedback-Driven Systems
+
+Insights are fed back into operations via events:
+
+- Trigger actions
+- Adjust processes
+- Enable continuous improvement
+
+---
+
+## Translation Layer (Domain Boundary)
 
 Cross-domain interaction is handled via an explicit Translation Layer:
 
@@ -135,107 +218,6 @@ style B fill:#e1f5fe,stroke:#01579b,color:#01579b
 
 ---
 
-### Real-Time Intelligence
-
-Each domain applies continuous analytics on its event streams using:
-
-- RisingWave (or similar streaming engines)
-
-Capabilities:
-
-- Continuous queries
-- Stateful stream processing
-- Pattern detection
-- Real-time aggregations
-
-> Analytics derive insights — they do not redefine domain semantics.
-
----
-
-### Feedback-Driven Systems
-
-Insights are fed back into operations via events:
-
-- Trigger actions
-- Adjust processes
-- Enable continuous improvement
-
----
-
-## Interaction Model
-
-### Within a Domain
-
-Operational Systems  
-→ Event Capture / Recreation  
-→ DigiSpine (Event Backbone)  
-→ Real-Time Analytics  
-→ Feedback Events  
-→ Operational Systems
-
-```mermaid
-graph TD
-%% Der horizontale Backbone über allem
-  DS{{"<b>EVENT BACKBONE</b> (Centralized Event Stream)"}}
-
-%% Styling für den Backbone
-  style DS fill:#ffcc00,stroke:#333,stroke-width:3px,color:#000
-
-%% Domain A
-  subgraph SCSA ["Domain A (SCS A)"]
-    direction TB
-    UIA["UI"]:::fixedSize
-    BKA["Backend"]:::fixedSize
-    STA[("Storage")]:::fixedSize
-    UIA <--> BKA <--> STA
-  end
-
-%% Domain B
-  subgraph SCSB ["Domain A (SCS B)"]
-    direction TB
-    InvisibleB[" "]:::fixedSize
-    BKB["Event Recreation"]:::fixedSize
-    STB[("Legacy Storage")]:::fixedSize
-    InvisibleB ~~~ BKB
-    BKB <--> STB 
-  end
-
-%% Domain C
-  subgraph SCSC ["Domain A (SCS C)"]
-    direction TB
-    UIC["UI"]:::fixedSize
-    BKC["Backend"]:::fixedSize
-    STC[("Storage")]:::fixedSize
-    UIC <--> BKC <--> STC
-  end
-
-%% Verbindungen: Genau eine Verbindung pro SCS zum Backbone
-  DS <==> SCSA
-  DS <==> SCSB
-  DS <==> SCSC
-
-%% Globale Stylings (Orientiert an deinem Bild)
-  style UIA fill:#d1e9ff,stroke:#333
-  style UIC fill:#d1e9ff,stroke:#333
-  style InvisibleB fill:none,stroke:none,stroke-width:0px,color:#
-  style BKA fill:#d5f5e3,stroke:#333
-  style BKB fill:#d5f5e3,stroke:#333
-  style BKC fill:#d5f5e3,stroke:#333
-
-  style STA fill:#fff4e5,stroke:#333
-  style STB fill:#fff4e5,stroke:#333
-  style STC fill:#fff4e5,stroke:#333
-
-````
-
----
-
-### Across Domains
-
-Domain A Events  
-→ Translation Layer  
-→ Translated Events  
-→ Domain B DigiSpine
 
 ---
 
