@@ -15,7 +15,7 @@ Instead of centralizing data and logic, DigiSpine enables:
 - Loose coupling between systems
 - Real-time data flow within and across domains
 
-![](images/digispine-reference-architecture.jpeg)
+![](images/digispine-reference-architecture.png)
 
 ---
 
