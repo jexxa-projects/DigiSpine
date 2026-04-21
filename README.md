@@ -116,9 +116,9 @@ Example:
 ```mermaid
 graph LR
 %% Definition der Knoten
-B["<b>Domain B</b><br>ChargeReady"]
+A["<b>Domain A \n(Blast Furnace)</b><br>MoltenIronTapped"]
+B["<b>Domain B \n(Steel Plant)</b><br>ChargeReady"]
 Trans(("<b>TRANSLATION</b>"))
-A["<b>Domain A</b><br>MoltenIronTapped"]
 
 %% Verbindungen (Rechts nach Links)
 A --- Trans
@@ -172,6 +172,61 @@ Operational Systems
 → Real-Time Analytics  
 → Feedback Events  
 → Operational Systems
+
+```mermaid
+graph TD
+%% Der horizontale Backbone über allem
+  DS{{"<b>EVENT BACKBONE</b> (Centralized Event Stream)"}}
+
+%% Styling für den Backbone
+  style DS fill:#ffcc00,stroke:#333,stroke-width:3px,color:#000
+
+%% Domain A
+  subgraph SCSA ["Domain A (SCS A)"]
+    direction TB
+    UIA["UI"]:::fixedSize
+    BKA["Backend"]:::fixedSize
+    STA[("Storage")]:::fixedSize
+    UIA <--> BKA <--> STA
+  end
+
+%% Domain B
+  subgraph SCSB ["Domain A (SCS B)"]
+    direction TB
+    InvisibleB[" "]:::fixedSize
+    BKB["Event Recreation"]:::fixedSize
+    STB[("Legacy Storage")]:::fixedSize
+    InvisibleB ~~~ BKB
+    BKB <--> STB 
+  end
+
+%% Domain C
+  subgraph SCSC ["Domain A (SCS C)"]
+    direction TB
+    UIC["UI"]:::fixedSize
+    BKC["Backend"]:::fixedSize
+    STC[("Storage")]:::fixedSize
+    UIC <--> BKC <--> STC
+  end
+
+%% Verbindungen: Genau eine Verbindung pro SCS zum Backbone
+  DS <==> SCSA
+  DS <==> SCSB
+  DS <==> SCSC
+
+%% Globale Stylings (Orientiert an deinem Bild)
+  style UIA fill:#d1e9ff,stroke:#333
+  style UIC fill:#d1e9ff,stroke:#333
+  style InvisibleB fill:none,stroke:none,stroke-width:0px,color:#
+  style BKA fill:#d5f5e3,stroke:#333
+  style BKB fill:#d5f5e3,stroke:#333
+  style BKC fill:#d5f5e3,stroke:#333
+
+  style STA fill:#fff4e5,stroke:#333
+  style STB fill:#fff4e5,stroke:#333
+  style STC fill:#fff4e5,stroke:#333
+
+````
 
 ---
 
