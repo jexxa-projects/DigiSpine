@@ -15,6 +15,8 @@ Instead of centralizing data and logic, DigiSpine enables:
 - Loose coupling between systems
 - Real-time data flow within and across domains
 
+![](images/digispine-reference-architecture.jpeg)
+
 ---
 
 ## Key Idea
@@ -111,9 +113,25 @@ Cross-domain interaction is handled via an explicit Translation Layer:
 
 Example:
 
-Domain A: MoltenIronTapped  
-→ (translation)  
-Domain B: ChargeReady
+```mermaid
+graph LR
+%% Definition der Knoten
+B["<b>Domain B</b><br>ChargeReady"]
+Trans(("<b>TRANSLATION</b>"))
+A["<b>Domain A</b><br>MoltenIronTapped"]
+
+%% Verbindungen (Rechts nach Links)
+A --- Trans
+Trans --> B
+
+%% Styling für den Translation-Knoten (Größer & Hervorgehoben)
+style Trans fill:#f9f,stroke:#333,stroke-width:4px,color:#000
+
+%% Styling für die Domains
+style A fill:#f4f4f4,stroke:#666,color:#333
+style B fill:#e1f5fe,stroke:#01579b,color:#01579b
+
+```
 
 ---
 
@@ -180,11 +198,9 @@ Domain A Events
 
 DigiSpine is supported by complementary frameworks:
 
-- Jexxa → Domain-driven system architecture  
-  https://github.com/jexxa-projects/Jexxa
+- [Jexxa → Domain-driven system architecture](https://github.com/jexxa-projects/Jexxa)
 
-- JLegMed → Legacy integration & semantic mediation  
-  https://github.com/jexxa-projects/JLegMed
+- [JLegMed → Legacy integration & semantic mediation](https://github.com/jexxa-projects/JLegMed)
 
 ---
 
@@ -235,12 +251,9 @@ with:
 
 > **Event-driven, domain-aligned, continuously improving systems**
 
-![](images/digispine-reference-architecture.jpeg)
 ---
 
 ## Status
-
-Work in progress.
 
 This repository provides:
 
