@@ -5,6 +5,8 @@ x-rw-common: &rw-common
   image: risingwavelabs/risingwave:latest
   networks:
     - risingwave_default
+    - s3-storage
+    - monitoring
   stop_grace_period: 120s
   configs:
     - source: risingwave_entrypoint_v1
@@ -26,46 +28,45 @@ x-env: &risingwave-env
   RUST_LOG: warn,risingwave_meta::hummock::manager::compaction::compaction_group_schedule=error,pgwire::pg_server=warn,rdkafka=error
   ENABLE_TELEMETRY: "false"
   AWS_REGION: us-east-1
-  AWS_ENDPOINT_URL: http://192.168.178.79:8100
-  S3_ENDPOINT: 192.168.178.79:8100
-  S3_BUCKET: risingwave-dev
-  S3_PATH: hummok_001_dev
-
+  AWS_ENDPOINT_URL: http://s3.storage:9100
+  S3_ENDPOINT: http://s3.storage:9100
+  S3_BUCKET: risingwave
+  S3_PATH: hummok_001
 services:
   meta-node:
     <<: *rw-common
     ports:
-      - "5691:5691"
+      - "7691:5691"
     environment:
       <<: *risingwave-env
-      RW_NODE_TYPE: "meta-node"
+      RW_NODE_TYPE: "meta"
       RW_NODE_OPTS: >
-        --backend sql 
-        --sql-endpoint postgres://postgres:@postgres-dev:5432/metadata 
-        --listen-addr 0.0.0.0:5690 
-        --advertise-addr meta-node:5690 
-        --dashboard-host 0.0.0.0:5691 
+        --backend sql
+        --sql-endpoint postgres://postgres:@postgres-dev:5432/metadata
+        --listen-addr 0.0.0.0:5690
+        --advertise-addr meta-node:5690
+        --dashboard-host 0.0.0.0:5691
         --prometheus-listener-addr 0.0.0.0:1250
 
   compute-node:
     <<: *rw-common
     environment:
       <<: *risingwave-env
-      RW_NODE_TYPE: "compute-node"
+      RW_NODE_TYPE: "compute"
       RW_NODE_OPTS: >
-        --listen-addr 0.0.0.0:5688 
-        --meta-address http://meta-node:5690  
+        --listen-addr 0.0.0.0:5688
+        --meta-address http://meta-node:5690 
         --prometheus-listener-addr 0.0.0.0:1250
 
   compactor-node:
     <<: *rw-common
     environment:
       <<: *risingwave-env
-      RW_NODE_TYPE: "compactor-node"
+      RW_NODE_TYPE: "compactor"
       RW_NODE_OPTS: >
-        --listen-addr 0.0.0.0:6660 
-        --advertise-addr compactor-node:6660 
-        --meta-address http://meta-node:5690  
+        --listen-addr 0.0.0.0:6660
+        --advertise-addr compactor-node:6660
+        --meta-address http://meta-node:5690 
         --prometheus-listener-addr 0.0.0.0:1250
 
   frontend-node:
@@ -73,21 +74,21 @@ services:
     secrets: # Erweitert die Secrets aus dem Anker
       - ops_s3_storage_pw
       - ops_s3_storage_user
-      - risingwave_tls_key
-      - risingwave_tls_cert
+      - https_certificate_pem
+      - https_certificate_key
     ports:
-      - "4566:4566"
+      - "5666:4566"
     environment:
       <<: *risingwave-env
-      RW_SSL_CERT: /run/secrets/risingwave_tls_cert
-      RW_SSL_KEY: /run/secrets/risingwave_tls_key
+      RW_SSL_CERT: /run/secrets/https_certificate_pem
+      RW_SSL_KEY: /run/secrets/https_certificate_key
       RW_SSL_ENFORCE: "true"
-      RW_NODE_TYPE: "frontend-node"
+      RW_NODE_TYPE: "frontend"
       RW_NODE_OPTS: >
-        --listen-addr 0.0.0.0:4566 
+        --listen-addr 0.0.0.0:4566
         --health-check-listener-addr 0.0.0.0:6786
-        --prometheus-listener-addr 0.0.0.0:1250 
-        --advertise-addr 0.0.0.0:4566 
+        --prometheus-listener-addr 0.0.0.0:1250
+        --advertise-addr 0.0.0.0:4566
         --meta-addr http://meta-node:5690
 
   risingwave-console:
@@ -127,19 +128,25 @@ networks:
   risingwave_default:
     driver: overlay
     attachable: true
-
+  s3-storage:
+    external: true
+  monitoring:
+    external: true
 volumes:
   postgres-data:
+    #driver: distributed-docker-volumes #TODO: Enable if you require a dedicated storage driver
+
   console-data:
+    #driver: distributed-docker-volumes #TODO: Enable if you require a dedicated storage driver
 
 secrets:
   ops_s3_storage_pw:
     external: true
   ops_s3_storage_user:
     external: true
-  risingwave_tls_cert:
+  https_certificate_pem:
     external: true
-  risingwave_tls_key:
+  https_certificate_key:
     external: true
 
 configs:
