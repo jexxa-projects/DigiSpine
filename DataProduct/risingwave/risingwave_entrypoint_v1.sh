@@ -6,7 +6,10 @@ set -e
 export AWS_ACCESS_KEY_ID=$(cat /run/secrets/ops_s3_storage_user)
 export AWS_SECRET_ACCESS_KEY=$(cat /run/secrets/ops_s3_storage_pw)
 # In der entrypoint.sh vor dem exec ergänzen:
-export CONTAINER_IP=$(hostname -i)
+#export CONTAINER_IP=$(hostname -i)
+export CONTAINER_IP=$(getent hosts $(hostname) | awk '{print $1}' | head -n 1)
+
+echo "DEBUG: CONTAINER_IP ist '$CONTAINER_IP'"
 
 # 2. Minimale TOML Datei ohne den veralteten [storage.s3] Block
 cat <<EOF > /tmp/risingwave.toml
@@ -20,7 +23,7 @@ data_directory = "${S3_PATH}"
 EOF
 
 # 3. Starten der Komponente
-if [ "$RW_NODE_TYPE" = "compute-node" ]; then
+if [ "$RW_NODE_TYPE" = "compute" ]; then
   # RW_NODE_OPTS dynamisch überschreiben
   RW_NODE_OPTS="$RW_NODE_OPTS --advertise-addr ${CONTAINER_IP}:5688"
 fi
