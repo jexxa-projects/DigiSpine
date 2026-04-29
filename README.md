@@ -147,16 +147,16 @@ Event types:
 
 ---
 
-### Domain Ownership
+### Domain Ownership & Logic Transparency
+> Shift the responsibility for business logic from IT departments back to the domain experts. 
+ 
+While legacy systems often function as "black boxes"—producing results through opaque processes—DigiSpine prioritizes transparency:
 
-Each domain:
+* __Logic in SQL__: Decision logic is formulated in SQL, a language accessible to both developers and technologists. This ensures that the "why" behind every event and decision is readable and auditable.
 
-- Owns its data, logic, and event semantics
-- Evolves independently
-- Defines its own contracts
+* __Direct Expert Contribution__: Because the logic is transparent, a domain expert can directly review a rule and identify missing conditions or errors. This eliminates the "lost in translation" effect between business needs and IT implementation.
 
-No global data model is shared across domains.
-
+* __True Domain Ownership__: This approach embodies the principle of Domain Ownership. The business unit owns and maintains its logic, while IT provides the robust infrastructure to run it.
 ---
 
 ### Real-Time Intelligence
