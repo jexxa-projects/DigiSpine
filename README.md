@@ -45,6 +45,12 @@ Traditional approaches try to unify this complexity into central systems.
 
 ---
 
+# 🌱 Open Source & Commercial Services
+
+For organizations adopting or evaluating DigiSpine, [MCR Intelligence](https://mcr-intelligence.de) offers commercial consulting and implementation support for domain/event-driven architecture and integration into existing system landscapes.
+
+All information provided in this project is freely available to the community; professional services provide dedicated assistance for your organization's specific needs.
+
 # DigiSpine Approach
 
 DigiSpine replaces centralized integration with:
